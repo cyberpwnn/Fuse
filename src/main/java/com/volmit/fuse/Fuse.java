@@ -1,21 +1,21 @@
 package com.volmit.fuse;
 
+import com.volmit.fuse.management.FuseService;
 import net.fabricmc.api.ModInitializer;
+import net.minecraft.client.MinecraftClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+
 public class Fuse implements ModInitializer {
-	// This logger is used to write text to the console and the log file.
-	// It is considered best practice to use your mod id as the logger's name.
-	// That way, it's clear which mod wrote info, warnings, and errors.
-	public static final Logger LOGGER = LoggerFactory.getLogger("modid");
+	public static FuseService service;
+	public static final Logger LOGGER = LoggerFactory.getLogger("fuse");
 
 	@Override
 	public void onInitialize() {
-		// This code runs as soon as Minecraft is in a mod-load-ready state.
-		// However, some things (like resources) may still be uninitialized.
-		// Proceed with mild caution.
-
-		LOGGER.info("Hello Fabric world!");
+		service = new FuseService(new File(MinecraftClient.getInstance().getLevelStorage().getSavesDirectory().getParent().toFile(), "fuse"));
+		LOGGER.info("Starting Fuse Backend Service");
+		service.open();
 	}
 }
