@@ -3,7 +3,7 @@
 // (powered by FernFlower decompiler)
 //
 
-package com.volmit.fuse.util;
+package com.volmit.fuse.fabric.util;
 
 import java.io.File;
 
@@ -29,7 +29,7 @@ public class FileWatcher {
         long g = this.size;
         boolean mod = false;
         this.readProperties();
-        if (this.lastModified != m || g != this.size) {
+        if(this.lastModified != m || g != this.size) {
             mod = true;
         }
 

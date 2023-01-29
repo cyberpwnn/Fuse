@@ -3,37 +3,33 @@
 // (powered by FernFlower decompiler)
 //
 
-package com.volmit.fuse.screen;
-
-import java.io.File;
-import java.util.Optional;
+package com.volmit.fuse.fabric.screen;
 
 import com.mojang.logging.LogUtils;
-import com.volmit.fuse.Fuse;
-import com.volmit.fuse.management.data.Project;
-import com.volmit.fuse.screen.widget.WorkspaceListWidget;
+import com.volmit.fuse.fabric.Fuse;
+import com.volmit.fuse.fabric.management.data.Project;
+import com.volmit.fuse.fabric.screen.widget.WorkspaceListWidget;
 import javafx.application.Platform;
 import javafx.stage.DirectoryChooser;
-import javafx.stage.FileChooser;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.world.WorldListWidget;
-import net.minecraft.client.gui.widget.*;
+import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.screen.ScreenTexts;
 import net.minecraft.text.Text;
 import net.minecraft.world.gen.GeneratorOptions;
 import org.slf4j.Logger;
 
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.plaf.FileChooserUI;
+import java.io.File;
+import java.util.Optional;
 
 @Environment(EnvType.CLIENT)
 public class WorkspaceScreen extends Screen {
     private static final Logger LOGGER = LogUtils.getLogger();
-    public static final GeneratorOptions DEBUG_GENERATOR_OPTIONS = new GeneratorOptions((long)"test1".hashCode(), true, false);
+    public static final GeneratorOptions DEBUG_GENERATOR_OPTIONS = new GeneratorOptions("test1".hashCode(), true, false);
     protected final Screen parent;
     private ButtonWidget unlinkButton;
     private ButtonWidget launchButton;
@@ -56,6 +52,7 @@ public class WorkspaceScreen extends Screen {
     }
 
     protected void init() {
+        Fuse.log("WIT?");
         this.searchBox = new TextFieldWidget(this.textRenderer, this.width / 2 - 100, 22, 200, 20, this.searchBox, Text.translatable("selectWorld.search"));
         this.searchBox.setChangedListener((search) -> {
             this.levelList.setSearch(search);
@@ -63,7 +60,7 @@ public class WorkspaceScreen extends Screen {
         this.levelList = new WorkspaceListWidget(this, this.client, this.width, this.height, 48, this.height - 64, 36, this.searchBox.getText(), this.levelList);
         this.addSelectableChild(this.searchBox);
         this.addSelectableChild(this.levelList);
-        this.launchButton = (ButtonWidget)this.addDrawableChild(ButtonWidget.builder(Text.translatable("Launch"), (button) -> {
+        this.launchButton = this.addDrawableChild(ButtonWidget.builder(Text.translatable("Launch"), (button) -> {
             // TODO: LAUNCH
         }).dimensions(this.width / 2 - 154, this.height - 52, 150, 20).build());
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("Add Project"), (button) -> {
@@ -74,13 +71,19 @@ public class WorkspaceScreen extends Screen {
                 Fuse.log("Added project " + project.getName());
             });
         }).dimensions(this.width / 2 + 4, this.height - 52, 150, 20).build());
-        this.editButton = (ButtonWidget)this.addDrawableChild(ButtonWidget.builder(Text.of("Edit"), (button) -> {
+        this.editButton = this.addDrawableChild(ButtonWidget.builder(Text.of("Edit"), (button) -> {
             // TODO EDIT
         }).dimensions(this.width / 2 - 154, this.height - 28, 72, 20).build());
-        this.unlinkButton = (ButtonWidget)this.addDrawableChild(ButtonWidget.builder(Text.of("Unlink"), (button) -> {
-            // TODO: UNLINK
+        this.unlinkButton = this.addDrawableChild(ButtonWidget.builder(Text.of("Unlink"), (button) -> {
+            Fuse.log("Unlinking project");
+            getSelectedAsOptional().ifPresent((entry) -> {
+                Fuse.log("Unlinked project " + entry.getProject().getName());
+                Fuse.service.getWorkspace().getProjects().remove(entry.getProject());
+                close();
+                client.setScreen(new WorkspaceScreen(parent));
+            });
         }).dimensions(this.width / 2 - 76, this.height - 28, 72, 20).build());
-        this.settingsButton = (ButtonWidget)this.addDrawableChild(ButtonWidget.builder(Text.of("Settings"), (button) -> {
+        this.settingsButton = this.addDrawableChild(ButtonWidget.builder(Text.of("Settings"), (button) -> {
             // TODO: SETTINGS
         }).dimensions(this.width / 2 + 4, this.height - 28, 72, 20).build());
         this.addDrawableChild(ButtonWidget.builder(ScreenTexts.CANCEL, (button) -> {
@@ -97,12 +100,12 @@ public class WorkspaceScreen extends Screen {
         return selectedDirectory;
     }
 
-    private Optional<WorldListWidget.WorldEntry> getSelectedAsOptional() {
-        return Optional.empty();
+    private Optional<WorkspaceListWidget.WorkspaceEntry> getSelectedAsOptional() {
+        return levelList.getSelectedAsOptional();
     }
 
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        return super.keyPressed(keyCode, scanCode, modifiers) ? true : this.searchBox.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(keyCode, scanCode, modifiers) || this.searchBox.keyPressed(keyCode, scanCode, modifiers);
     }
 
     public void close() {
@@ -130,8 +133,9 @@ public class WorkspaceScreen extends Screen {
 
     }
 
-    public void workspaceSelected(boolean b)
-    {
-
+    public void workspaceSelected(boolean b) {
+        this.launchButton.active = b;
+        this.unlinkButton.active = b;
+        this.editButton.active = b;
     }
 }

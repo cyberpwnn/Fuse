@@ -1,7 +1,7 @@
-package com.volmit.fuse.management;
+package com.volmit.fuse.fabric.management;
 
-import com.volmit.fuse.Fuse;
-import com.volmit.fuse.util.ProcessRelogger;
+import com.volmit.fuse.fabric.Fuse;
+import com.volmit.fuse.fabric.util.ProcessRelogger;
 import lombok.Builder;
 import lombok.Singular;
 
@@ -19,7 +19,7 @@ public class JarExecutor extends Thread {
     @Singular
     private final List<String> args;
 
-    public JarExecutor execute(){
+    public JarExecutor execute() {
         start();
         try {
             join();
@@ -41,13 +41,14 @@ public class JarExecutor extends Thread {
             args.addAll(this.args);
         }
 
-        Fuse.log("Executing: " + String.join(" ", args));
+        Fuse.log("Executing: " + String.join(" ", args) + " in " + directory.getAbsolutePath());
         Fuse.log(Fuse.service.getFuseDataFolder().getAbsolutePath());
         try {
             Process p = new ProcessBuilder()
                 .command(args.toArray(new String[0]))
                 .directory(Optional.of(directory).orElse(Fuse.service.getFuseDataFolder()))
                 .start();
+            Runtime.getRuntime().addShutdownHook(new Thread(p::destroy));
             new ProcessRelogger(p.getInputStream(), false).start();
             new ProcessRelogger(p.getErrorStream(), false).start();
             int code = p.waitFor();

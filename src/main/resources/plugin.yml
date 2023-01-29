@@ -1,0 +1,8 @@
+name: Fuse
+main: com.volmit.fuse.bukkit.Fuse
+version: 1.0.0
+authors: [ cyberpwn ]
+api-version: 1.19
+commands:
+  fuse:
+    aliases: [ fu ]

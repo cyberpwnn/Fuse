@@ -1,0 +1,27 @@
+{
+  "build_success": {
+    "subtitle": "Build complete",
+    "sounds": [
+      "fuse:success1",
+      "fuse:success2"
+    ]
+  },
+  "build_failed": {
+    "subtitle": "Build Failed",
+    "sounds": [
+      "fuse:failed1"
+    ]
+  },
+  "build_started": {
+    "subtitle": "Build Started",
+    "sounds": [
+      "fuse:started1"
+    ]
+  },
+  "online": {
+    "subtitle": "Fuse Online",
+    "sounds": [
+      "fuse:online"
+    ]
+  }
+}

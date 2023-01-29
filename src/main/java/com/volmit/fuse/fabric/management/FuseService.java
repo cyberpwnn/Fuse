@@ -1,12 +1,12 @@
-package com.volmit.fuse.management;
+package com.volmit.fuse.fabric.management;
 
 import art.arcane.chrono.PrecisionStopwatch;
 import art.arcane.multiburst.MultiBurst;
 import com.google.gson.Gson;
-import com.volmit.fuse.Fuse;
-import com.volmit.fuse.management.data.Project;
-import com.volmit.fuse.management.data.Workspace;
-import com.volmit.fuse.util.Looper;
+import com.volmit.fuse.fabric.Fuse;
+import com.volmit.fuse.fabric.management.data.Project;
+import com.volmit.fuse.fabric.management.data.Workspace;
+import com.volmit.fuse.fabric.util.Looper;
 import javafx.application.Platform;
 import lombok.Getter;
 import org.apache.commons.compress.archivers.ArchiveEntry;
@@ -17,10 +17,16 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.zeroturnaround.zip.ZipUtil;
 
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 import java.awt.Toolkit;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -42,7 +48,7 @@ public class FuseService {
     private final File workspaceFile;
     private File serverExecutable;
     private final File serverPurpurExecutable;
-    private DevServer devServer;
+    private final DevServer devServer;
     private boolean ready;
     private boolean jfxready;
     private Workspace workspace;
@@ -63,9 +69,9 @@ public class FuseService {
         jdkLocation = new File(fuseDataFolder, "jdk");
         buildToolsJar = new File(buildToolsFolder, "BuildTools.jar");
         serverFolder = new File(fuseDataFolder, "dev-server");
-        serverExecutable = new File(serverFolder, "spigot-"+VERSION+".jar");
-        serverPurpurExecutable = new File(serverFolder, "purpur-"+VERSION+".jar");
-        serverExecutableBuildToolsOut = new File(buildToolsFolder, VERSION + "/spigot-"+VERSION+".jar");
+        serverExecutable = new File(serverFolder, "spigot-" + VERSION + ".jar");
+        serverPurpurExecutable = new File(serverFolder, "purpur-" + VERSION + ".jar");
+        serverExecutableBuildToolsOut = new File(buildToolsFolder, VERSION + "/spigot-" + VERSION + ".jar");
         devServer = new DevServer(this::onServerStarted);
         Fuse.log("Fuse Service Initialized with data folder: " + fuseDataFolder.getAbsolutePath());
         Fuse.log("Spigot Version: " + VERSION);
@@ -76,6 +82,23 @@ public class FuseService {
                 return 1000;
             }
         };
+    }
+
+    private void installFuseJar() throws IOException {
+        String path = Fuse.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+        Fuse.log("Running from: " + path);
+
+        if(path.endsWith(".jar")) {
+            new File(serverFolder, "plugins/fuse").mkdirs();
+            FileUtils.copyFile(new File(path), new File(serverFolder, "plugins/Fuse.jar"));
+            Fuse.log("Copied Fuse.jar to server plugins folder");
+        } else {
+            Fuse.log("Fuse is not running from a jar. Attempting to self build and install from outputs...");
+            Project project = new Project(new File(path).getParentFile().getParentFile()
+                .getParentFile().getParentFile().getAbsolutePath());
+            Fuse.log("Project: " + project.getLocation());
+            project.selfBuild();
+        }
     }
 
     private void onTick() {
@@ -93,9 +116,7 @@ public class FuseService {
         try {
             workspace = new Gson().fromJson(readAll(workspaceFile), Workspace.class);
             Fuse.log("Loaded Workspace with " + workspace.getProjects().size() + " projects");
-        }
-
-        catch(Throwable e) {
+        } catch(Throwable e) {
             Fuse.log("Failed to load workspace: " + e.getMessage());
             workspace = new Workspace();
         }
@@ -108,11 +129,10 @@ public class FuseService {
         Fuse.log("Saved workspace");
     }
 
-    private String readAll(File file)
-    {
+    private String readAll(File file) {
         try {
             return new String(Files.readAllBytes(Paths.get(file.getAbsolutePath())));
-        } catch (IOException e) {
+        } catch(IOException e) {
             e.printStackTrace();
         }
 
@@ -122,13 +142,14 @@ public class FuseService {
     private void saveAll(String s, File file) {
         try {
             Files.write(Paths.get(file.getAbsolutePath()), s.getBytes());
-        } catch (IOException e) {
+        } catch(IOException e) {
             e.printStackTrace();
         }
     }
 
     private void onServerStarted() {
         ready = true;
+        Fuse.onServerStarted();
     }
 
     public void open() {
@@ -143,6 +164,13 @@ public class FuseService {
 
     private void initialize() {
         executor.queue(() -> {
+            try {
+                installFuseJar();
+            } catch(IOException e) {
+                e.printStackTrace();
+            }
+        });
+        executor.queue(() -> {
             Fuse.log("Initializing Service");
             fuseDataFolder.mkdirs();
             serverFolder.mkdirs();
@@ -153,9 +181,7 @@ public class FuseService {
                 if(!serverPurpurExecutable.exists()) {
                     Fuse.log("Failed to download purpur. Falling back to spigot via build tools.");
                     installBuildTools();
-                }
-
-                else {
+                } else {
                     serverExecutable = serverPurpurExecutable;
                 }
 
@@ -188,7 +214,7 @@ public class FuseService {
     private void downloadLatestPurpur() {
         executor.queue(() -> {
             Fuse.log("Downloading Purpur " + VERSION);
-            download("https://api.purpurmc.org/v2/purpur/"+VERSION+"/latest/download", serverPurpurExecutable);
+            download("https://api.purpurmc.org/v2/purpur/" + VERSION + "/latest/download", serverPurpurExecutable);
         });
     }
 
@@ -276,43 +302,42 @@ public class FuseService {
             Fuse.log("Extracting JDK");
             if(!jdkLocation.exists()) {
                 if(tar) {
-                    try (InputStream fi = Files.newInputStream(Paths.get(jdkLocation.getAbsolutePath()));
-                         InputStream bi = new BufferedInputStream(fi);
-                         InputStream gzi = new GzipCompressorInputStream(bi);
-                         ArchiveInputStream i = new TarArchiveInputStream(gzi)) {
+                    try(InputStream fi = Files.newInputStream(Paths.get(jdkLocation.getAbsolutePath()));
+                        InputStream bi = new BufferedInputStream(fi);
+                        InputStream gzi = new GzipCompressorInputStream(bi);
+                        ArchiveInputStream i = new TarArchiveInputStream(gzi)) {
                         ArchiveEntry entry = null;
-                        while ((entry = i.getNextEntry()) != null) {
-                            if (!i.canReadEntryData(entry)) {
+                        while((entry = i.getNextEntry()) != null) {
+                            if(!i.canReadEntryData(entry)) {
                                 // log something?
                                 continue;
                             }
                             File f = new File(jdkLocation, entry.getName());
-                            if (entry.isDirectory()) {
-                                if (!f.isDirectory() && !f.mkdirs()) {
+                            if(entry.isDirectory()) {
+                                if(!f.isDirectory() && !f.mkdirs()) {
                                     throw new IOException("failed to create directory " + f);
                                 }
                             } else {
                                 File parent = f.getParentFile();
-                                if (!parent.isDirectory() && !parent.mkdirs()) {
+                                if(!parent.isDirectory() && !parent.mkdirs()) {
                                     throw new IOException("failed to create directory " + parent);
                                 }
-                                try (OutputStream o = Files.newOutputStream(f.toPath())) {
+                                try(OutputStream o = Files.newOutputStream(f.toPath())) {
                                     IOUtils.copy(i, o);
                                 }
                             }
                         }
-                    } catch (IOException e) {
+                    } catch(IOException e) {
                         throw new RuntimeException(e);
                     }
-                }
-                else {
+                } else {
                     ZipUtil.unwrap(jdkPackage, jdkLocation);
                 }
             }
         });
     }
 
-    private void download(String url, File file) {
+    public void download(String url, File file) {
         if(file.exists()) {
             Fuse.log("Skipping download of " + file.getName() + " as it already exists.");
             return;
@@ -329,9 +354,7 @@ public class FuseService {
             fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
             fos.close();
             Fuse.log("Downloaded " + file.getName() + " in " + p.getMilliseconds() + "ms");
-        }
-
-        catch (Throwable e) {
+        } catch(Throwable e) {
             e.printStackTrace();
         }
     }
@@ -354,9 +377,7 @@ public class FuseService {
 
             reader.close();
             pw.close();
-        }
-
-        catch(Throwable e) {
+        } catch(Throwable e) {
             e.printStackTrace();
         }
     }

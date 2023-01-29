@@ -3,29 +3,15 @@
 // (powered by FernFlower decompiler)
 //
 
-package com.volmit.fuse.screen.widget;
+package com.volmit.fuse.fabric.screen.widget;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.hash.Hashing;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.logging.LogUtils;
-
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-
-import com.volmit.fuse.screen.WorkspaceScreen;
+import com.volmit.fuse.fabric.Fuse;
+import com.volmit.fuse.fabric.management.data.Project;
+import com.volmit.fuse.fabric.screen.WorkspaceScreen;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.SharedConstants;
@@ -35,6 +21,7 @@ import net.minecraft.client.gui.DrawableHelper;
 import net.minecraft.client.gui.screen.FatalErrorScreen;
 import net.minecraft.client.gui.screen.LoadingDisplay;
 import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
+import net.minecraft.client.gui.screen.world.WorldListWidget;
 import net.minecraft.client.gui.widget.AlwaysSelectedEntryListWidget;
 import net.minecraft.client.gui.widget.EntryListWidget;
 import net.minecraft.client.render.GameRenderer;
@@ -52,6 +39,21 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+
 @Environment(EnvType.CLIENT)
 public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<WorkspaceListWidget.Entry> {
     static final Logger LOGGER = LogUtils.getLogger();
@@ -65,9 +67,8 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
     static final Text LOCKED_TEXT;
     static final Text CONVERSION_TOOLTIP;
     private final WorkspaceScreen parent;
-    private CompletableFuture<List<LevelSummary>> levelsFuture;
     @Nullable
-    private List<LevelSummary> levels;
+    private List<Project> levels;
     private String search;
     private final LoadingEntry loadingEntry;
 
@@ -76,39 +77,25 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
         this.parent = parent;
         this.loadingEntry = new LoadingEntry(client);
         this.search = search;
-        if (oldWidget != null) {
-            this.levelsFuture = oldWidget.levelsFuture;
-        } else {
-            this.levelsFuture = this.loadLevels();
-        }
-
         this.show(this.tryGet());
     }
 
     @Nullable
-    private List<LevelSummary> tryGet() {
-        try {
-            return (List)this.levelsFuture.getNow(null);
-        } catch (CancellationException | CompletionException var2) {
-            return null;
-        }
-    }
-
-    void load() {
-        this.levelsFuture = this.loadLevels();
+    private List<Project> tryGet() {
+        return Fuse.service.getWorkspace().getProjects();
     }
 
     public void render(MatrixStack matrices, int mouseX, int mouseY, float delta) {
-        List<LevelSummary> list = this.tryGet();
-        if (list != this.levels) {
+        List<Project> list = this.tryGet();
+        if(list != this.levels) {
             this.show(list);
         }
 
         super.render(matrices, mouseX, mouseY, delta);
     }
 
-    private void show(@Nullable List<LevelSummary> levels) {
-        if (levels == null) {
+    private void show(@Nullable List<Project> levels) {
+        if(levels == null) {
             this.showLoadingScreen();
         } else {
             this.showSummaries(this.search, levels);
@@ -118,43 +105,21 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
     }
 
     public void setSearch(String search) {
-        if (this.levels != null && !search.equals(this.search)) {
+        if(this.levels != null && !search.equals(this.search)) {
             this.showSummaries(search, this.levels);
         }
 
         this.search = search;
     }
 
-    private CompletableFuture<List<LevelSummary>> loadLevels() {
-        LevelStorage.LevelList levelList;
-        try {
-            levelList = this.client.getLevelStorage().getLevelList();
-        } catch (LevelStorageException var3) {
-            LOGGER.error("Couldn't load level list", var3);
-            this.showUnableToLoadScreen(var3.getMessageText());
-            return CompletableFuture.completedFuture(List.of());
-        }
-
-        if (levelList.isEmpty()) {
-            //CreateWorldScreen.create(this.client, (Screen)null);
-            // Go to create screen TODO: Make this work
-            return CompletableFuture.completedFuture(List.of());
-        } else {
-            return this.client.getLevelStorage().loadSummaries(levelList).exceptionally((throwable) -> {
-                this.client.setCrashReportSupplierAndAddDetails(CrashReport.create(throwable, "Couldn't load level list"));
-                return List.of();
-            });
-        }
-    }
-
-    private void showSummaries(String search, List<LevelSummary> summaries) {
+    private void showSummaries(String search, List<Project> summaries) {
         this.clearEntries();
         search = search.toLowerCase(Locale.ROOT);
         Iterator var3 = summaries.iterator();
 
         while(var3.hasNext()) {
-            LevelSummary levelSummary = (LevelSummary)var3.next();
-            if (this.shouldShow(search, levelSummary)) {
+            Project levelSummary = (Project) var3.next();
+            if(this.shouldShow(search, levelSummary)) {
                 this.addEntry(new WorkspaceEntry(this, levelSummary));
             }
         }
@@ -162,8 +127,8 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
         this.narrateScreenIfNarrationEnabled();
     }
 
-    private boolean shouldShow(String search, LevelSummary summary) {
-        return summary.getDisplayName().toLowerCase(Locale.ROOT).contains(search) || summary.getName().toLowerCase(Locale.ROOT).contains(search);
+    private boolean shouldShow(String search, Project summary) {
+        return summary.getLocation().toLowerCase(Locale.ROOT).contains(search) || summary.getName().toLowerCase(Locale.ROOT).contains(search);
     }
 
     private void showLoadingScreen() {
@@ -202,8 +167,9 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
     }
 
     public Optional<WorkspaceEntry> getSelectedAsOptional() {
-        Entry entry = (Entry)this.getSelectedOrNull();
-        if (entry instanceof WorkspaceEntry workspaceEntry) {
+        Fuse.log("Got it!?");
+        Entry entry = this.getSelectedOrNull();
+        if(entry instanceof WorkspaceEntry workspaceEntry) {
             return Optional.of(workspaceEntry);
         } else {
             return Optional.empty();
@@ -215,7 +181,7 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
     }
 
     public void appendNarrations(NarrationMessageBuilder builder) {
-        if (this.children().contains(this.loadingEntry)) {
+        if(this.children().contains(this.loadingEntry)) {
             this.loadingEntry.appendNarrations(builder);
         } else {
             super.appendNarrations(builder);
@@ -244,12 +210,12 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
             int i = (this.client.currentScreen.width - this.client.textRenderer.getWidth(LOADING_LIST_TEXT)) / 2;
             Objects.requireNonNull(this.client.textRenderer);
             int j = y + (entryHeight - 9) / 2;
-            this.client.textRenderer.draw(matrices, LOADING_LIST_TEXT, (float)i, (float)j, 16777215);
+            this.client.textRenderer.draw(matrices, LOADING_LIST_TEXT, (float) i, (float) j, 16777215);
             String string = LoadingDisplay.get(Util.getMeasuringTimeMs());
             int k = (this.client.currentScreen.width - this.client.textRenderer.getWidth(string)) / 2;
             Objects.requireNonNull(this.client.textRenderer);
             int l = j + 9;
-            this.client.textRenderer.draw(matrices, string, (float)k, (float)l, 8421504);
+            this.client.textRenderer.draw(matrices, string, (float) k, (float) l, 8421504);
         }
 
         public Text getNarration() {
@@ -273,91 +239,59 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
         private static final int field_32442 = 32;
         private final MinecraftClient client;
         private final WorkspaceScreen screen;
-        private final LevelSummary level;
-        private final Identifier iconLocation;
+        private final Project level;
         @Nullable
         private Path iconPath;
         private long time;
 
-        public WorkspaceEntry(WorkspaceListWidget levelList, LevelSummary level) {
+
+
+        public Project getProject() {
+            return level;
+        }
+
+        public WorkspaceEntry(WorkspaceListWidget levelList, Project level) {
             this.client = levelList.client;
             this.screen = levelList.getParent();
             this.level = level;
             String string = level.getName();
             String var10004 = Util.replaceInvalidChars(string, Identifier::isPathCharacterValid);
-            this.iconLocation = new Identifier("minecraft", "worlds/" + var10004 + "/" + Hashing.sha1().hashUnencodedChars(string) + "/icon");
-            this.iconPath = level.getIconPath();
-            if (!Files.isRegularFile(this.iconPath, new LinkOption[0])) {
-                this.iconPath = null;
-            }
         }
 
         public void render(MatrixStack matrices, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
-            String string = this.level.getDisplayName();
+            String string = this.level.getName();
             String var10000 = this.level.getName();
-            String string2 = var10000 + " (" + WorkspaceListWidget.DATE_FORMAT.format(new Date(this.level.getLastPlayed())) + ")";
-            if (StringUtils.isEmpty(string)) {
-                var10000 = I18n.translate("selectWorld.world", new Object[0]);
+            if(StringUtils.isEmpty(string)) {
+                var10000 = I18n.translate("selectWorld.world");
                 string = var10000 + " " + (index + 1);
             }
 
-            Text text = this.level.getDetails();
-            this.client.textRenderer.draw(matrices, string, (float)(x + 32 + 3), (float)(y + 1), 16777215);
+            this.client.textRenderer.draw(matrices, string, (float) (x + 32 + 3), (float) (y + 1), 16777215);
             TextRenderer var17 = this.client.textRenderer;
-            float var10003 = (float)(x + 32 + 3);
+            float var10003 = (float) (x + 32 + 3);
             Objects.requireNonNull(this.client.textRenderer);
-            var17.draw(matrices, string2, var10003, (float)(y + 9 + 3), 8421504);
+            var17.draw(matrices, Text.of(level.getLocation()), var10003, (float) (y + 9 + 3), 8421504);
             var17 = this.client.textRenderer;
-            var10003 = (float)(x + 32 + 3);
+            var10003 = (float) (x + 32 + 3);
             Objects.requireNonNull(this.client.textRenderer);
             int var10004 = y + 9;
             Objects.requireNonNull(this.client.textRenderer);
-            var17.draw(matrices, text, var10003, (float)(var10004 + 9 + 3), 8421504);
-            RenderSystem.setShader(GameRenderer::getPositionTexProgram);
-            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-            RenderSystem.enableBlend();
-            DrawableHelper.drawTexture(matrices, x, y, 0.0F, 0.0F, 32, 32, 32, 32);
-            RenderSystem.disableBlend();
-            if ((Boolean)this.client.options.getTouchscreen().getValue() || hovered) {
-                RenderSystem.setShaderTexture(0, WorkspaceListWidget.WORLD_SELECTION_LOCATION);
-                DrawableHelper.fill(matrices, x, y, x + 32, y + 32, -1601138544);
-                RenderSystem.setShader(GameRenderer::getPositionTexProgram);
-                RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-                int i = mouseX - x;
-                boolean bl = i < 32;
-                int j = bl ? 32 : 0;
-                if (this.level.isLocked()) {
-                    DrawableHelper.drawTexture(matrices, x, y, 96.0F, (float)j, 32, 32, 256, 256);
-                    if (bl) {
-                        this.screen.setTooltip(this.client.textRenderer.wrapLines(WorkspaceListWidget.LOCKED_TEXT, 175));
-                    }
-                } else if (this.level.requiresConversion()) {
-                    DrawableHelper.drawTexture(matrices, x, y, 96.0F, (float)j, 32, 32, 256, 256);
-                    if (bl) {
-                        this.screen.setTooltip(this.client.textRenderer.wrapLines(WorkspaceListWidget.CONVERSION_TOOLTIP, 175));
-                    }
-                } else if (this.level.isDifferentVersion()) {
-                    DrawableHelper.drawTexture(matrices, x, y, 32.0F, (float)j, 32, 32, 256, 256);
-                    if (this.level.isFutureLevel()) {
-                        DrawableHelper.drawTexture(matrices, x, y, 96.0F, (float)j, 32, 32, 256, 256);
-                        if (bl) {
-                            this.screen.setTooltip(ImmutableList.of(WorkspaceListWidget.FROM_NEWER_VERSION_FIRST_LINE.asOrderedText(), WorkspaceListWidget.FROM_NEWER_VERSION_SECOND_LINE.asOrderedText()));
-                        }
-                    } else if (!SharedConstants.getGameVersion().isStable()) {
-                        DrawableHelper.drawTexture(matrices, x, y, 64.0F, (float)j, 32, 32, 256, 256);
-                        if (bl) {
-                            this.screen.setTooltip(ImmutableList.of(WorkspaceListWidget.SNAPSHOT_FIRST_LINE.asOrderedText(), WorkspaceListWidget.SNAPSHOT_SECOND_LINE.asOrderedText()));
-                        }
-                    }
-                } else {
-                    DrawableHelper.drawTexture(matrices, x, y, 0.0F, (float)j, 32, 32, 256, 256);
-                }
-            }
-
+            var17.draw(matrices, Text.of(level.getMain()), var10003, (float) (var10004 + 9 + 3), 8421504);
         }
 
         public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            return true;
+            WorkspaceListWidget.this.setSelected((WorkspaceListWidget.Entry)this);
+            this.screen.worldSelected(WorkspaceListWidget.this.getSelectedAsOptional().isPresent());
+            if (mouseX - (double)WorkspaceListWidget.this.getRowLeft() <= 32.0) {
+                this.play();
+                return true;
+            } else if (Util.getMeasuringTimeMs() - this.time < 250L) {
+                this.play();
+                return true;
+            } else {
+                this.time = Util.getMeasuringTimeMs();
+                return false;
+            }
         }
 
         @Override

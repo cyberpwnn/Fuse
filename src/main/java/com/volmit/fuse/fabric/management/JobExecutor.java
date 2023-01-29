@@ -1,13 +1,14 @@
-package com.volmit.fuse.management;
+package com.volmit.fuse.fabric.management;
 
 import art.arcane.multiburst.MultiBurst;
-import com.volmit.fuse.Fuse;
-import com.volmit.fuse.util.Looper;
+import com.volmit.fuse.fabric.Fuse;
+import com.volmit.fuse.fabric.util.Looper;
 import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 public class JobExecutor {
@@ -34,7 +35,7 @@ public class JobExecutor {
             return 0;
         }
 
-        return (double)((int)((((double)getCompleted()) / (double) getQueued()) * 1000))/1000.0;
+        return (double) ((int) ((((double) getCompleted()) / (double) getQueued()) * 1000)) / 1000.0;
     }
 
     public int getCompleted() {
@@ -63,6 +64,24 @@ public class JobExecutor {
         return this;
     }
 
+    public JobExecutor queueThenWait(Runnable r) {
+        AtomicBoolean b = new AtomicBoolean(false);
+        queue(() -> {
+            r.run();
+            b.set(true);
+        });
+
+        while(!b.get()) {
+            try {
+                Thread.sleep(50);
+            } catch(InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return this;
+    }
+
     public void drain() {
         draining = true;
         Fuse.log("Work Started");
@@ -70,9 +89,9 @@ public class JobExecutor {
         progressUpdater = new Looper() {
             @Override
             protected long loop() {
-                if(System.currentTimeMillis() - Fuse.ll > 1000) {
+                if(System.currentTimeMillis() - Fuse.ll > 10000) {
                     tickProgress();
-                    return 500;
+                    return 10000;
                 }
 
                 return 1000;
@@ -82,7 +101,12 @@ public class JobExecutor {
 
         while(!queue.isEmpty()) {
             List<Runnable> q = new ArrayList<>(queue).stream().map((i) -> (Runnable) () -> {
-                    i.run();
+                    try {
+                        i.run();
+                    } catch(Throwable e) {
+                        e.printStackTrace();
+                        Fuse.err("Failed to execute job!");
+                    }
                     completed = completed + 1;
                 }
             ).collect(Collectors.toList());
@@ -95,11 +119,6 @@ public class JobExecutor {
         int cc = getCompleted();
 
         MultiBurst.burst.lazy(() -> {
-            try {
-                Thread.sleep(3000);
-            } catch(InterruptedException e) {
-                throw new RuntimeException(e);
-            }
             Fuse.log("Work Completed. " + getCompleted() + " jobs completed.");
         });
 

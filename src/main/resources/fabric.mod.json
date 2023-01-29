@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "id": "modid",
+  "id": "fuse",
   "version": "${version}",
 
   "name": "Fuse",
   "description": "Spigot Plugin Development Mod",
   "authors": [
-    "Me!"
+    "cyberpwn"
   ],
   "contact": {
     "homepage": "https://fabricmc.net/",
@@ -19,7 +19,7 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "com.volmit.fuse.Fuse"
+      "com.volmit.fuse.fabric.Fuse"
     ]
   },
   "mixins": [
