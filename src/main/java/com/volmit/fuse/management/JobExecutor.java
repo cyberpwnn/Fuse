@@ -3,6 +3,7 @@ package com.volmit.fuse.management;
 import art.arcane.multiburst.MultiBurst;
 import com.volmit.fuse.Fuse;
 import com.volmit.fuse.util.Looper;
+import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 public class JobExecutor {
+    @Getter
     private final MultiBurst burst;
     private final List<Runnable> queue;
     private int queued;

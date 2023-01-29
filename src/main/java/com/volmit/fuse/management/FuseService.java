@@ -3,14 +3,12 @@ package com.volmit.fuse.management;
 import art.arcane.chrono.PrecisionStopwatch;
 import art.arcane.multiburst.MultiBurst;
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import com.volmit.fuse.Fuse;
+import com.volmit.fuse.management.data.Project;
+import com.volmit.fuse.management.data.Workspace;
 import com.volmit.fuse.util.Looper;
-import lombok.Data;
+import javafx.application.Platform;
 import lombok.Getter;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.projectile.thrown.ThrownEntity;
-import net.minecraft.world.biome.Biome;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -19,6 +17,9 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.zeroturnaround.zip.ZipUtil;
 
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import java.awt.Toolkit;
 import java.io.*;
 import java.net.URL;
 import java.nio.channels.Channels;
@@ -38,24 +39,92 @@ public class FuseService {
     private final JobExecutor executor;
     public static final String VERSION = "1.19.3";
     private final File serverExecutableBuildToolsOut;
-    private final File serverExecutable;
+    private final File workspaceFile;
+    private File serverExecutable;
+    private final File serverPurpurExecutable;
     private DevServer devServer;
     private boolean ready;
+    private boolean jfxready;
+    private Workspace workspace;
+    private String lastWorkspaceSave;
+    private final Looper looper;
 
     public FuseService(File fuseDataFolder) {
         this.fuseDataFolder = fuseDataFolder;
         ready = false;
+        jfxready = false;
+        workspace = new Workspace();
         executor = new JobExecutor();
+        workspaceFile = new File(fuseDataFolder, "workspace.json");
+        lastWorkspaceSave = "";
+        loadWorkspace();
         buildToolsFolder = new File(fuseDataFolder, "buildtools");
         jdkPackage = new File(fuseDataFolder, "cache/jdkpkg");
         jdkLocation = new File(fuseDataFolder, "jdk");
         buildToolsJar = new File(buildToolsFolder, "BuildTools.jar");
         serverFolder = new File(fuseDataFolder, "dev-server");
         serverExecutable = new File(serverFolder, "spigot-"+VERSION+".jar");
+        serverPurpurExecutable = new File(serverFolder, "purpur-"+VERSION+".jar");
         serverExecutableBuildToolsOut = new File(buildToolsFolder, VERSION + "/spigot-"+VERSION+".jar");
         devServer = new DevServer(this::onServerStarted);
         Fuse.log("Fuse Service Initialized with data folder: " + fuseDataFolder.getAbsolutePath());
         Fuse.log("Spigot Version: " + VERSION);
+        looper = new Looper() {
+            @Override
+            protected long loop() {
+                onTick();
+                return 1000;
+            }
+        };
+    }
+
+    private void onTick() {
+        workspace.onTick();
+
+        if(lastWorkspaceSave.equals(new Gson().toJson(workspace))) {
+            return;
+        }
+
+        saveWorkspace();
+    }
+
+    private void loadWorkspace() {
+        workspaceFile.getParentFile().mkdirs();
+        try {
+            workspace = new Gson().fromJson(readAll(workspaceFile), Workspace.class);
+            Fuse.log("Loaded Workspace with " + workspace.getProjects().size() + " projects");
+        }
+
+        catch(Throwable e) {
+            Fuse.log("Failed to load workspace: " + e.getMessage());
+            workspace = new Workspace();
+        }
+    }
+
+    private void saveWorkspace() {
+        String f = new Gson().toJson(workspace);
+        lastWorkspaceSave = f;
+        saveAll(f, workspaceFile);
+        Fuse.log("Saved workspace");
+    }
+
+    private String readAll(File file)
+    {
+        try {
+            return new String(Files.readAllBytes(Paths.get(file.getAbsolutePath())));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    private void saveAll(String s, File file) {
+        try {
+            Files.write(Paths.get(file.getAbsolutePath()), s.getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void onServerStarted() {
@@ -68,6 +137,7 @@ public class FuseService {
     }
 
     public void close() {
+        saveWorkspace();
         devServer.stopServer();
     }
 
@@ -75,17 +145,50 @@ public class FuseService {
         executor.queue(() -> {
             Fuse.log("Initializing Service");
             fuseDataFolder.mkdirs();
+            serverFolder.mkdirs();
             installJDK();
+            downloadLatestPurpur();
             executor.after(() -> {
-                if(true)
-                {
+                installServerFiles();
+                if(!serverPurpurExecutable.exists()) {
+                    Fuse.log("Failed to download purpur. Falling back to spigot via build tools.");
                     installBuildTools();
+                }
+
+                else {
+                    serverExecutable = serverPurpurExecutable;
                 }
 
                 executor.after(() -> {
                     devServer.start();
+                    executor.queue(looper::start);
+                    executor.queue(Toolkit::getDefaultToolkit);
+                    Platform.startup(() -> jfxready = true);
+                    executor.queue(() -> {
+                        while(!ready) {
+                            try {
+                                Thread.sleep(250);
+                            } catch(InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                        while(!jfxready) {
+                            try {
+                                Thread.sleep(250);
+                            } catch(InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    });
                 });
             });
+        });
+    }
+
+    private void downloadLatestPurpur() {
+        executor.queue(() -> {
+            Fuse.log("Downloading Purpur " + VERSION);
+            download("https://api.purpurmc.org/v2/purpur/"+VERSION+"/latest/download", serverPurpurExecutable);
         });
     }
 
@@ -108,15 +211,21 @@ public class FuseService {
         });
     }
 
-    private void setupServer() {
+    private void setupSpigotServer() {
         executor.queue(() -> {
             Fuse.log("Setting up Development Spigot Server...");
-            serverFolder.mkdirs();
-            installServerJar();
+            installSpigotServerJar();
         });
     }
 
-    private void installServerJar() {
+    private void installServerFiles() {
+        executor.queue(() -> installServerFile("bukkit.yml"));
+        executor.queue(() -> installServerFile("eula.txt"));
+        executor.queue(() -> installServerFile("server.properties"));
+        executor.queue(() -> installServerFile("spigot.yml"));
+    }
+
+    private void installSpigotServerJar() {
         executor.queue(() -> {
             Fuse.log("Installing Spigot Jar");
             try {
@@ -125,11 +234,6 @@ public class FuseService {
                 throw new RuntimeException(e);
             }
         });
-
-        executor.queue(() -> installServerFile("bukkit.yml"));
-        executor.queue(() -> installServerFile("eula.txt"));
-        executor.queue(() -> installServerFile("server.properties"));
-        executor.queue(() -> installServerFile("spigot.yml"));
     }
 
     private void buildSpigotJar() {
@@ -144,7 +248,7 @@ public class FuseService {
                 .arg(VERSION)
                 .arg("--compile-if-changed")
                 .build().execute();
-            setupServer();
+            setupSpigotServer();
         });
     }
 
@@ -209,6 +313,11 @@ public class FuseService {
     }
 
     private void download(String url, File file) {
+        if(file.exists()) {
+            Fuse.log("Skipping download of " + file.getName() + " as it already exists.");
+            return;
+        }
+
         Fuse.log("Downloading " + url + " into " + file.getPath());
         file.getParentFile().mkdirs();
         PrecisionStopwatch p = PrecisionStopwatch.start();

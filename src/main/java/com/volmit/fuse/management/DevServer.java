@@ -59,8 +59,7 @@ public class DevServer extends Thread {
         }
     }
 
-    public void messagePlayer(String message)
-    {
+    public void messagePlayer(String message) {
         serverCommand("tell " + player + " " + message);
     }
 
@@ -101,8 +100,17 @@ public class DevServer extends Thread {
         String javaRoot = new File(Fuse.service.getJdkLocation(), "bin/java").getAbsolutePath();
         List<String> args = new ArrayList<>();
         args.add(javaRoot);
+        //-Xmx8g -Xms8g -XX:+UnlockExperimentalVMOptions -XX:+UseZGC
+        args.add("-Xmx8g");
+        args.add("-Xms1m");
+        args.add("-XX:+UnlockExperimentalVMOptions");
+        args.add("-XX:+UseZGC");
+        args.add("-XX:SoftMaxHeapSize=2G");
+        args.add("-XX:ZUncommitDelay=30");
+        args.add("-DIReallyKnowWhatIAmDoingISwear");
         args.add("-jar");
         args.add(Fuse.service.getServerExecutable().getAbsolutePath());
+        args.add("nogui");
 
         Fuse.log("Executing: " + String.join(" ", args));
         Fuse.log(Fuse.service.getFuseDataFolder().getAbsolutePath());

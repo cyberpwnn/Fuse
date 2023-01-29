@@ -2,6 +2,7 @@ plugins {
 	id 'fabric-loom' version '1.0-SNAPSHOT'
 	id 'maven-publish'
 	id "io.freefair.lombok" version "6.6.1"
+	id 'org.openjfx.javafxplugin' version '0.0.13'
 }
 
 sourceCompatibility = JavaVersion.VERSION_17
@@ -21,8 +22,14 @@ repositories {
 		url "https://arcanearts.jfrog.io/artifactory/archives"
 		content {
 			includeGroup "art.arcane"
+			includeGroup "org.openjfx"
 		}
 	}
+}
+
+javafx {
+	version = '17'
+	modules = [ 'javafx.controls', 'javafx.fxml' ]
 }
 
 dependencies {

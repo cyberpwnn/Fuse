@@ -5,10 +5,16 @@
 
 package com.volmit.fuse.screen;
 
+import java.io.File;
 import java.util.Optional;
 
 import com.mojang.logging.LogUtils;
+import com.volmit.fuse.Fuse;
+import com.volmit.fuse.management.data.Project;
 import com.volmit.fuse.screen.widget.WorkspaceListWidget;
+import javafx.application.Platform;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.screen.Screen;
@@ -19,6 +25,10 @@ import net.minecraft.screen.ScreenTexts;
 import net.minecraft.text.Text;
 import net.minecraft.world.gen.GeneratorOptions;
 import org.slf4j.Logger;
+
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.plaf.FileChooserUI;
 
 @Environment(EnvType.CLIENT)
 public class WorkspaceScreen extends Screen {
@@ -57,7 +67,12 @@ public class WorkspaceScreen extends Screen {
             // TODO: LAUNCH
         }).dimensions(this.width / 2 - 154, this.height - 52, 150, 20).build());
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("Add Project"), (button) -> {
-            // TODO: ADD PROJECT
+            Platform.runLater(() -> {
+                File directory = chooseDirectory();
+                Project project = new Project(directory.getAbsolutePath());
+                Fuse.service.getWorkspace().getProjects().add(project);
+                Fuse.log("Added project " + project.getName());
+            });
         }).dimensions(this.width / 2 + 4, this.height - 52, 150, 20).build());
         this.editButton = (ButtonWidget)this.addDrawableChild(ButtonWidget.builder(Text.of("Edit"), (button) -> {
             // TODO EDIT
@@ -73,6 +88,13 @@ public class WorkspaceScreen extends Screen {
         }).dimensions(this.width / 2 + 82, this.height - 28, 72, 20).build());
         this.worldSelected(false);
         this.setInitialFocus(this.searchBox);
+    }
+
+    private File chooseDirectory() {
+        DirectoryChooser chooser = new DirectoryChooser();
+        chooser.setTitle("Select Project Directory");
+        File selectedDirectory = chooser.showDialog(null);
+        return selectedDirectory;
     }
 
     private Optional<WorldListWidget.WorldEntry> getSelectedAsOptional() {
