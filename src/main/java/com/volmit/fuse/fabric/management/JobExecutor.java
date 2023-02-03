@@ -16,6 +16,7 @@ public class JobExecutor {
     private final MultiBurst burst;
     private final List<Runnable> queue;
     private final List<Runnable> after;
+    private Looper progressUpdater;
     private int queued;
     private int completed;
     private boolean draining;
@@ -85,7 +86,7 @@ public class JobExecutor {
         draining = true;
         Fuse.log("Work Started");
         tickProgress();
-        Looper progressUpdater = new Looper() {
+        progressUpdater = new Looper() {
             @Override
             protected long loop() {
                 if (System.currentTimeMillis() - Fuse.ll > 10000) {
