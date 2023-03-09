@@ -3,6 +3,7 @@ plugins {
 	id 'maven-publish'
 	id "io.freefair.lombok" version "6.6.1"
 	id 'org.openjfx.javafxplugin' version '0.0.13'
+	id "com.github.johnrengelman.shadow" version "7.1.2"
 }
 
 sourceCompatibility = JavaVersion.VERSION_17
@@ -26,6 +27,14 @@ javafx {
 	modules = [ 'javafx.controls', 'javafx.fxml' ]
 }
 
+shadowJar {
+	append("plugin.yml")
+	relocate 'art.arcane', 'com.volmit.adapt.util.arcane'
+	dependencies {
+		include(dependency('art.arcane:'))
+	}
+}
+
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -39,10 +48,19 @@ dependencies {
 	// These are included in the Fabric API production distribution and allow you to update your mod to the latest modules at a later more convenient time.
 
 	// modImplementation "net.fabricmc.fabric-api:fabric-api-deprecated:${project.fabric_version}"
+	include 'art.arcane:MultiBurst:22.9.2'
+	include 'org.zeroturnaround:zt-zip:1.15'
+	include 'org.apache.commons:commons-compress:1.22'
+	include 'art.arcane:Chrono:22.9.10'
+	include 'art.arcane:Curse:22.11.8'
+	include 'me.carleslc.Simple-YAML:Simple-Yaml:1.8.3'
+	include 'org.openjfx:javafx:17.0.6'
+	implementation 'org.openjfx:javafx:17.0.6'
 	implementation 'art.arcane:MultiBurst:22.9.2'
 	implementation 'org.zeroturnaround:zt-zip:1.15'
 	implementation 'org.apache.commons:commons-compress:1.22'
 	implementation 'art.arcane:Chrono:22.9.10'
+	implementation 'art.arcane:Curse:22.11.8'
 	implementation 'me.carleslc.Simple-YAML:Simple-Yaml:1.8.3'
 	implementation 'org.spigotmc:spigot-api:1.19.3-R0.1-SNAPSHOT'
 }
@@ -60,11 +78,14 @@ tasks.withType(JavaCompile).configureEach {
 	it.options.release = 17
 }
 
+loom{
+	remapJar{
+
+	}
+}
+
 java {
-	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-	// if it is present.
-	// If you remove this line, sources will not be generated.
-	withSourcesJar()
+
 }
 
 jar {

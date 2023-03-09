@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 
 public class Fuse implements ModInitializer {
     public static final Logger LOG = LoggerFactory.getLogger("fuse");
@@ -29,10 +30,10 @@ public class Fuse implements ModInitializer {
     public static final Identifier BUILD_STARTED_ID = new Identifier("fuse:build_started");
     public static final Identifier ONLINE_ID = new Identifier("fuse:online");
     private static final KeyBinding keyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-            "Workspace Manager",
-            InputUtil.Type.KEYSYM,
-            GLFW.GLFW_KEY_SEMICOLON,
-            "Fuse"
+        "Workspace Manager",
+        InputUtil.Type.KEYSYM,
+        GLFW.GLFW_KEY_SEMICOLON,
+        "Fuse"
     ));
     public static long ll = -1;
     public static String lastLog = "";
@@ -52,7 +53,7 @@ public class Fuse implements ModInitializer {
 
     public static void toast(FuseToast.Type type, String title, String desc) {
         MinecraftClient.getInstance().getToastManager().add(
-                new FuseToast(type, Text.of(title), Text.of(desc)));
+            new FuseToast(type, Text.of(title), Text.of(desc)));
     }
 
     public static void onProjectBuildStarted(Project project) {
@@ -77,7 +78,7 @@ public class Fuse implements ModInitializer {
 
     public static void log(String msg) {
         ll = System.currentTimeMillis();
-        if (msg.equals("... done")) {
+        if(msg.equals("... done")) {
             return;
         }
 
@@ -87,7 +88,7 @@ public class Fuse implements ModInitializer {
 
     public static void err(String msg) {
         ll = System.currentTimeMillis();
-        if (msg.equals("... done")) {
+        if(msg.equals("... done")) {
             return;
         }
 
@@ -106,7 +107,7 @@ public class Fuse implements ModInitializer {
         Registry.register(Registries.SOUND_EVENT, ONLINE_ID, ONLINE_SOUND);
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (keyBinding.wasPressed()) {
+            if(keyBinding.wasPressed()) {
                 client.setScreen(new WorkspaceScreen(client.currentScreen));
             }
         });

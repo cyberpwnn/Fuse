@@ -3,6 +3,11 @@ main: com.volmit.fuse.bukkit.Fuse
 version: 1.0.0
 authors: [ cyberpwn ]
 api-version: 1.19
+libraries:
+  - org.bitbucket.mstrobel:procyon-core:0.6.0
+  - org.bitbucket.mstrobel:procyon-compilertools:0.6.0
+  - org.bitbucket.mstrobel:procyon-reflection:0.6.0
+  - org.zeroturnaround:zt-zip:1.15
 commands:
   fuse:
     aliases: [ fu ]

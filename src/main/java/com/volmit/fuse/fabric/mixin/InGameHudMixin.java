@@ -25,13 +25,13 @@ public abstract class InGameHudMixin {
 
     @Inject(method = "render", at = @At("RETURN"))
     public void onRender(MatrixStack matrices, float tickDelta, CallbackInfo info) {
-        for (Project i : Fuse.service.getWorkspace().getProjects()) {
-            if (i.isBuilding()) {
+        for(Project i : Fuse.service.getWorkspace().getProjects()) {
+            if(i.isBuilding()) {
                 building.add(i.getName());
             }
         }
 
-        if (building.isEmpty()) {
+        if(building.isEmpty()) {
             return;
         }
 

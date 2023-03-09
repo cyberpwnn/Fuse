@@ -23,7 +23,7 @@ public class GradleExecutor extends Thread {
         start();
         try {
             join();
-        } catch (InterruptedException e) {
+        } catch(InterruptedException e) {
             throw new RuntimeException(e);
         }
 
@@ -38,7 +38,7 @@ public class GradleExecutor extends Thread {
         args.add(gradleRoot);
         args.add("-Dorg.gradle.java.home=" + Fuse.service.getJdkLocation().getAbsolutePath());
 
-        if (this.args != null) {
+        if(this.args != null) {
             args.addAll(this.args);
         }
 
@@ -46,8 +46,8 @@ public class GradleExecutor extends Thread {
         Fuse.log(Fuse.service.getFuseDataFolder().getAbsolutePath());
         try {
             ProcessBuilder pb = new ProcessBuilder()
-                    .command(args.toArray(new String[0]))
-                    .directory(project);
+                .command(args.toArray(new String[0]))
+                .directory(project);
             pb.environment().put("JAVA_HOME", Fuse.service.getJdkLocation().getAbsolutePath());
             Process p = pb.start();
             Runtime.getRuntime().addShutdownHook(new Thread(p::destroy));
@@ -56,7 +56,7 @@ public class GradleExecutor extends Thread {
             code = p.waitFor();
             Fuse.log("Process Exited With Code " + code);
 
-        } catch (IOException | InterruptedException e) {
+        } catch(IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }

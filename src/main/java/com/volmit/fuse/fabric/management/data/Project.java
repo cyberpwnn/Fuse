@@ -48,7 +48,7 @@ public class Project {
                 try {
                     build();
                     Fuse.onProjectBuildSuccess(this);
-                } catch( Throwable e) {
+                } catch(Throwable e) {
                     Fuse.onProjectBuildFailed(this);
                     e.printStackTrace();
                 }
@@ -90,8 +90,7 @@ public class Project {
         return null;
     }
 
-    public String getName()
-    {
+    public String getName() {
         return name == null ? new File(location).getName() : name;
     }
 
@@ -127,8 +126,9 @@ public class Project {
             .project(new File(location))
             .gradle(getGradleInstallationFolder(getGradleDownloadUrl()))
             .arg("remapJar")
+            .arg("shadowJar")
             .build().execute();
-        File file = findBestOutput(false);
+        File file = findBestOutput(true);
         Fuse.log("SelfBuild complete");
 
         if(file != null) {
@@ -154,8 +154,7 @@ public class Project {
             .arg(hasShadow ? "shadowJar" : "build")
             .build().execute();
 
-        if(e.code != 0)
-        {
+        if(e.code != 0) {
             Fuse.log("Gradle build failed with code " + e.code);
             throw new RuntimeException("Gradle build failed with code " + e.code);
         }
