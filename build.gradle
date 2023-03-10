@@ -29,32 +29,21 @@ javafx {
 
 shadowJar {
 	append("plugin.yml")
-	relocate 'art.arcane', 'com.volmit.adapt.util.arcane'
 	dependencies {
+		include(dependency('org.zeroturnaround:'))
 		include(dependency('art.arcane:'))
+		include(dependency('org.apache.commons:'))
+		include(dependency('commons-io:'))
+		include(dependency('me.carleslc.Simple-YAML:'))
+		include(dependency('org.openjfx:'))
 	}
 }
 
 dependencies {
-	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	mappings "net.fabricmc:yarn:${project.yarn_mappings}"
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-
-	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-
-	// Uncomment the following line to enable the deprecated Fabric API modules.
-	// These are included in the Fabric API production distribution and allow you to update your mod to the latest modules at a later more convenient time.
-
-	// modImplementation "net.fabricmc.fabric-api:fabric-api-deprecated:${project.fabric_version}"
-	include 'art.arcane:MultiBurst:22.9.2'
-	include 'org.zeroturnaround:zt-zip:1.15'
-	include 'org.apache.commons:commons-compress:1.22'
-	include 'art.arcane:Chrono:22.9.10'
-	include 'art.arcane:Curse:22.11.8'
-	include 'me.carleslc.Simple-YAML:Simple-Yaml:1.8.3'
-	include 'org.openjfx:javafx:17.0.6'
 	implementation 'org.openjfx:javafx:17.0.6'
 	implementation 'art.arcane:MultiBurst:22.9.2'
 	implementation 'org.zeroturnaround:zt-zip:1.15'
@@ -64,6 +53,8 @@ dependencies {
 	implementation 'me.carleslc.Simple-YAML:Simple-Yaml:1.8.3'
 	implementation 'org.spigotmc:spigot-api:1.19.3-R0.1-SNAPSHOT'
 }
+
+remapJar.dependsOn shadowJar
 
 processResources {
 	inputs.property "version", project.version
@@ -80,7 +71,7 @@ tasks.withType(JavaCompile).configureEach {
 
 loom{
 	remapJar{
-
+		inputFile = file("build/libs/"+archivesBaseName+"-"+version+"-all.jar")
 	}
 }
 

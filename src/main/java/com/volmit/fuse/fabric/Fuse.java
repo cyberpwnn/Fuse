@@ -22,8 +22,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Fuse implements ModInitializer {
+    private static List<Runnable> retoast = new ArrayList<>();
     public static final Logger LOG = LoggerFactory.getLogger("fuse");
     public static final Identifier BUILD_FAILED_ID = new Identifier("fuse:build_failed");
     public static final Identifier BUILD_SUCCESS_ID = new Identifier("fuse:build_success");
@@ -52,8 +55,20 @@ public class Fuse implements ModInitializer {
     }
 
     public static void toast(FuseToast.Type type, String title, String desc) {
-        MinecraftClient.getInstance().getToastManager().add(
-            new FuseToast(type, Text.of(title), Text.of(desc)));
+        try {
+            MinecraftClient.getInstance().getToastManager().add(
+                new FuseToast(type, Text.of(title), Text.of(desc)));
+
+            if(!retoast.isEmpty()) {
+                retoast.forEach(Runnable::run);
+                retoast.clear();
+            }
+        }
+
+        catch(Throwable e) {
+            retoast.add(() -> MinecraftClient.getInstance().getToastManager().add(
+                new FuseToast(type, Text.of(title), Text.of(desc))));
+        }
     }
 
     public static void onProjectBuildStarted(Project project) {
@@ -96,11 +111,16 @@ public class Fuse implements ModInitializer {
         Fuse.LOG.error(msg);
     }
 
+    public static void start() {
+        if(service == null) {
+            service = new FuseService(new File("fuse"));
+            LOG.info("Starting Fuse Backend Service");
+            service.open();
+        }
+    }
+
     @Override
     public void onInitialize() {
-        service = new FuseService(new File("fuse"));
-        LOG.info("Starting Fuse Backend Service");
-        service.open();
         Registry.register(Registries.SOUND_EVENT, BUILD_FAILED_ID, BUILD_FAILED_SOUND);
         Registry.register(Registries.SOUND_EVENT, BUILD_SUCCESS_ID, BUILD_SUCCESS_SOUND);
         Registry.register(Registries.SOUND_EVENT, BUILD_STARTED_ID, BUILD_STARTED_SOUND);

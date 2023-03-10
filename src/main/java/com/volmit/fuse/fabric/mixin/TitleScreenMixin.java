@@ -24,6 +24,7 @@ public class TitleScreenMixin extends Screen {
 
     @Inject(at = @At("RETURN"), method = "initWidgetsNormal")
     private void addCustomButton(int y, int spacingY, CallbackInfo ci) {
+        Fuse.start();
         this.addDrawable(new FuseProgressWidget(7, 7, width - 14, 9));
         this.addDrawableChild(ButtonWidget.builder(Text.of("✦"), (button) -> {
             if(Fuse.service.isReady()) {

@@ -7,7 +7,8 @@
   ],
   "client": [
     "TitleScreenMixin",
-    "InGameHudMixin"
+    "InGameHudMixin",
+    "GuiPlayerTabOverlayMixin"
   ],
   "injectors": {
     "defaultRequire": 1

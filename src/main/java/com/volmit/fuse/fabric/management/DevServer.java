@@ -4,6 +4,7 @@ import com.volmit.fuse.fabric.Fuse;
 import com.volmit.fuse.fabric.management.data.Project;
 import com.volmit.fuse.fabric.util.Looper;
 import com.volmit.fuse.fabric.util.ProcessRelogger;
+import lombok.Getter;
 import net.minecraft.client.MinecraftClient;
 import org.apache.commons.io.FileUtils;
 
@@ -12,18 +13,26 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 public class DevServer extends Thread {
     private final Runnable onStarted;
     private final Consumer<String> serverLog;
+    @Getter
+    private final List<String> logs;
+    private final Map<String, String> debugKeys = new ConcurrentHashMap<>();
+    private final Map<String, Long> lastDebug = new ConcurrentHashMap<>();
     private PrintWriter outputWriter;
     private String player;
     private boolean closeClient = false;
     private Process process;
 
     public DevServer(Runnable onStarted) {
+        logs = new ArrayList<>();
         this.onStarted = onStarted;
         this.serverLog = this::onServerLog;
         Looper looper = new Looper() {
@@ -34,6 +43,34 @@ public class DevServer extends Thread {
             }
         };
         looper.start();
+    }
+
+    public Map<String, Long> getDebugTimes()
+    {
+        return lastDebug;
+    }
+
+    public Map<String, String> getDebugKeys()
+    {
+        synchronized(debugKeys) {
+            for(String i : new ArrayList<>(debugKeys.keySet())) {
+                if(lastDebug.get(i) == null || System.currentTimeMillis() - lastDebug.get(i) > 10000) {
+                    lastDebug.remove(i);
+                    debugKeys.remove(i);
+                }
+            }
+        }
+
+        return debugKeys;
+    }
+
+    public void putDebugKey(String k, String v)
+    {
+        synchronized(debugKeys)
+        {
+            debugKeys.put(k, v);
+            lastDebug.put(k, System.currentTimeMillis());
+        }
     }
 
     public void installFuse(File file) throws IOException {
@@ -55,6 +92,23 @@ public class DevServer extends Thread {
     }
 
     private void onServerLog(String line) {
+        if(line.contains("@debug ")) {
+            try
+            {
+                String[] s = line.split("\\Q@debug \\E");
+                String[] k = s[1].split("\\Q \\E");
+                putDebugKey(k[0], k[1]);
+            }
+
+            catch(Throwable e)
+            {
+                e.printStackTrace();
+            }
+        }
+
+        else {
+            logs.add(line);
+        }
         if(line.contains("Done") && line.contains("s)! For help, type \"help\"")) {
             onServerOnline();
         }

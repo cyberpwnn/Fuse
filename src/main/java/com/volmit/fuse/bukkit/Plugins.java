@@ -8,6 +8,7 @@ import org.bukkit.permissions.Permission;
 import org.bukkit.plugin.InvalidDescriptionException;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
+import org.bukkit.plugin.PluginLoader;
 import org.bukkit.plugin.SimplePluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.java.JavaPluginLoader;
@@ -152,7 +153,7 @@ public class Plugins {
 
     public static void unload(Plugin plugin) {
         Fuse.info("Unloading " + plugin.getName() + " v" + plugin.getDescription().getVersion());
-        JavaPluginLoader loader = (JavaPluginLoader) plugin.getPluginLoader();
+        PluginLoader loader = plugin.getPluginLoader();
         SimplePluginManager manager = (SimplePluginManager) Bukkit.getServer().getPluginManager();
         Fuse.info("Disabling " + plugin.getName() + " v" + plugin.getDescription().getVersion());
         manager.disablePlugin(plugin);
@@ -231,19 +232,28 @@ public class Plugins {
         }
 
         synchronized(loader) {
-            List<?> loaders = Curse.on(loader).get("loaders");
+            if(loader.getClass().getCanonicalName().equalsIgnoreCase("io.papermc.paper.plugin.manager.DummyBukkitPluginLoader")) {
+                Fuse.warn("Paper detected, unload of " + plugin.getName() + "'s loader may partially fail");
+            }
 
-            for(Object i : new ArrayList<>(loaders)) {
-                JavaPlugin p = Curse.on(i).get("plugin");
-                if(p != null) {
-                    if(p.getClass().equals(plugin.getClass())) {
-                        if(loaders.remove(i)) {
-                            Fuse.info("Removed " + plugin.getName() + " from loaders");
-                        } else {
-                            Fuse.warn("Couldn't remove " + plugin.getName() + " in loaders?");
+            try {
+                List<?> loaders = Curse.on(loader).get("loaders");
+
+                for(Object i : new ArrayList<>(loaders)) {
+                    JavaPlugin p = Curse.on(i).get("plugin");
+                    if(p != null) {
+                        if(p.getClass().equals(plugin.getClass())) {
+                            if(loaders.remove(i)) {
+                                Fuse.info("Removed " + plugin.getName() + " from loaders");
+                            } else {
+                                Fuse.warn("Couldn't remove " + plugin.getName() + " in loaders?");
+                            }
                         }
                     }
                 }
+            } catch(Throwable e)
+            {
+                Fuse.error("Yup, looks like Paper is in use, and we can't unload " + plugin.getName() + "'s loader. This may cause issues with deleting the jar file or reloading it.");
             }
         }
 

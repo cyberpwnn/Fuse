@@ -35,8 +35,8 @@ public class GradleExecutor extends Thread {
         List<String> args = new ArrayList<>();
         args.add("cmd");
         args.add("/c");
-        args.add(gradleRoot);
-        args.add("-Dorg.gradle.java.home=" + Fuse.service.getJdkLocation().getAbsolutePath());
+        args.add("\"\"" + gradleRoot + "\"");
+        args.add("-Dorg.gradle.java.home=" + Fuse.service.getJdkLocation().getAbsolutePath() + "\"");
 
         if(this.args != null) {
             args.addAll(this.args);
