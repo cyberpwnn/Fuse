@@ -39,26 +39,26 @@ public class Plugins {
     public static PluginDescriptionFile getPluginDescription(File file) {
         try {
             return Fuse.instance.getPluginLoader().getPluginDescription(file);
-        } catch(InvalidDescriptionException e) {
+        } catch (InvalidDescriptionException e) {
             throw new RuntimeException(e);
         }
     }
 
     public static Plugin getPlugin(String query) {
-        for(Plugin i : Bukkit.getPluginManager().getPlugins()) {
-            if(i.getName().equalsIgnoreCase(query)) {
+        for (Plugin i : Bukkit.getPluginManager().getPlugins()) {
+            if (i.getName().equalsIgnoreCase(query)) {
                 return i;
             }
         }
 
-        for(Plugin i : Bukkit.getPluginManager().getPlugins()) {
-            if(i.getName().toLowerCase().startsWith(query.toLowerCase())) {
+        for (Plugin i : Bukkit.getPluginManager().getPlugins()) {
+            if (i.getName().toLowerCase().startsWith(query.toLowerCase())) {
                 return i;
             }
         }
 
-        for(Plugin i : Bukkit.getPluginManager().getPlugins()) {
-            if(i.getName().toLowerCase().contains(query.toLowerCase())) {
+        for (Plugin i : Bukkit.getPluginManager().getPlugins()) {
+            if (i.getName().toLowerCase().contains(query.toLowerCase())) {
                 return i;
             }
         }
@@ -69,56 +69,56 @@ public class Plugins {
     public static File getPluginFile(String query) {
         File f = new File("plugins/" + query + ".jar");
 
-        if(f.exists()) {
+        if (f.exists()) {
             return f;
         }
 
         Map<File, PluginDescriptionFile> pdfs = new HashMap<>();
 
-        for(File i : new File("plugins").listFiles()) {
+        for (File i : new File("plugins").listFiles()) {
             try {
                 PluginDescriptionFile pdf = pdfs.computeIfAbsent(i, Plugins::getPluginDescription);
 
-                if(pdf.getName().equalsIgnoreCase(query)) {
+                if (pdf.getName().equalsIgnoreCase(query)) {
                     return i;
                 }
-            } catch(Throwable e) {
+            } catch (Throwable e) {
 
             }
         }
 
-        for(File i : new File("plugins").listFiles()) {
+        for (File i : new File("plugins").listFiles()) {
             try {
                 PluginDescriptionFile pdf = pdfs.computeIfAbsent(i, (k) -> {
                     try {
                         return Fuse.instance.getPluginLoader().getPluginDescription(k);
-                    } catch(InvalidDescriptionException e) {
+                    } catch (InvalidDescriptionException e) {
                         throw new RuntimeException(e);
                     }
                 });
 
-                if(pdf.getName().toLowerCase().startsWith(query.toLowerCase())) {
+                if (pdf.getName().toLowerCase().startsWith(query.toLowerCase())) {
                     return i;
                 }
-            } catch(Throwable e) {
+            } catch (Throwable e) {
 
             }
         }
 
-        for(File i : new File("plugins").listFiles()) {
+        for (File i : new File("plugins").listFiles()) {
             try {
                 PluginDescriptionFile pdf = pdfs.computeIfAbsent(i, (k) -> {
                     try {
                         return Fuse.instance.getPluginLoader().getPluginDescription(k);
-                    } catch(InvalidDescriptionException e) {
+                    } catch (InvalidDescriptionException e) {
                         throw new RuntimeException(e);
                     }
                 });
 
-                if(pdf.getName().toLowerCase().contains(query.toLowerCase())) {
+                if (pdf.getName().toLowerCase().contains(query.toLowerCase())) {
                     return i;
                 }
-            } catch(Throwable e) {
+            } catch (Throwable e) {
 
             }
         }
@@ -146,7 +146,7 @@ public class Plugins {
             p.onLoad();
             Bukkit.getPluginManager().enablePlugin(p);
             return p;
-        } catch(Throwable e) {
+        } catch (Throwable e) {
             throw new RuntimeException(e);
         }
     }
@@ -159,7 +159,7 @@ public class Plugins {
         manager.disablePlugin(plugin);
         Fuse.info("Disabled " + plugin.getName() + " v" + plugin.getDescription().getVersion());
 
-        synchronized(manager) {
+        synchronized (manager) {
             Fuse.info("Unregistering Listeners for " + plugin.getName() + " v" + plugin.getDescription().getVersion());
             HandlerList.unregisterAll(plugin);
             Fuse.info("Cancelling Tasks for " + plugin.getName() + " v" + plugin.getDescription().getVersion());
@@ -170,80 +170,80 @@ public class Plugins {
             Map<String, Permission> permissions = Curse.on(manager).get("permissions");
             Map<Boolean, Set<Permission>> defaultPerms = Curse.on(manager).get("defaultPerms");
 
-            if(plugins.remove(plugin)) {
+            if (plugins.remove(plugin)) {
                 Fuse.info("Removed " + plugin.getName() + " from plugin list");
             } else {
                 Fuse.warn("Couldn't find " + plugin.getName() + " in plugin list");
             }
 
-            if(plugins.removeIf(i -> i.getClass().equals(plugin.getClass()))) {
+            if (plugins.removeIf(i -> i.getClass().equals(plugin.getClass()))) {
                 Fuse.info("Removed refs by class " + plugin.getName() + " from plugin list");
             } else {
                 Fuse.warn("Couldn't find refs by class " + plugin.getName() + " in plugin list");
             }
 
-            if(lookupNames.remove(plugin.getDescription().getName()) != null) {
+            if (lookupNames.remove(plugin.getDescription().getName()) != null) {
                 Fuse.info("Removed " + plugin.getName() + " from lookup names");
             } else {
                 Fuse.warn("Couldn't find " + plugin.getName() + " in lookup names");
             }
 
-            for(String i : new HashMap<>(lookupNames).keySet()) {
-                if(lookupNames.get(i).getClass().equals(plugin.getClass())) {
+            for (String i : new HashMap<>(lookupNames).keySet()) {
+                if (lookupNames.get(i).getClass().equals(plugin.getClass())) {
                     lookupNames.remove(i);
                     Fuse.info("Removed '" + i + "' from lookup names");
                 }
             }
 
-            if(dependencyGraph.removeNode(plugin.getDescription().getName())) {
+            if (dependencyGraph.removeNode(plugin.getDescription().getName())) {
                 Fuse.info("Removed " + plugin.getName() + " from dependency graph");
             } else {
                 Fuse.warn("Couldn't find " + plugin.getName() + " in dependency graph");
             }
             dependencyGraph.edges().stream().filter(i ->
-                    i.nodeU().equals(plugin.getDescription().getName())
-                        || i.nodeV().equals(plugin.getDescription().getName()))
-                .forEach(i -> {
-                    if(dependencyGraph.removeEdge(i)) {
-                        Fuse.info("Removed " + plugin.getName() + " from dependency graph edge " + i);
-                    } else {
-                        Fuse.warn("Couldn't find " + plugin.getName() + " in dependency graph edge " + i);
-                    }
-                });
+                            i.nodeU().equals(plugin.getDescription().getName())
+                                    || i.nodeV().equals(plugin.getDescription().getName()))
+                    .forEach(i -> {
+                        if (dependencyGraph.removeEdge(i)) {
+                            Fuse.info("Removed " + plugin.getName() + " from dependency graph edge " + i);
+                        } else {
+                            Fuse.warn("Couldn't find " + plugin.getName() + " in dependency graph edge " + i);
+                        }
+                    });
             Set<Permission> p = new HashSet<>(plugin.getDescription().getPermissions());
 
-            for(String i : new HashSet<>(permissions.keySet())) {
-                if(p.contains(permissions.get(i))) {
+            for (String i : new HashSet<>(permissions.keySet())) {
+                if (p.contains(permissions.get(i))) {
                     permissions.remove(i);
                     Fuse.info("Removed " + plugin.getName() + ":" + i + " from permissions");
                 }
             }
 
-            if(defaultPerms.get(true).removeAll(p)) {
+            if (defaultPerms.get(true).removeAll(p)) {
                 Fuse.info("Removed " + plugin.getName() + " from default perms TRUE");
             } else {
                 Fuse.warn("Couldn't find " + plugin.getName() + " in default perms TRUE");
             }
-            if(defaultPerms.get(false).removeAll(p)) {
+            if (defaultPerms.get(false).removeAll(p)) {
                 Fuse.info("Removed " + plugin.getName() + " from default perms FALSE");
             } else {
                 Fuse.warn("Couldn't find " + plugin.getName() + " in default perms FALSE");
             }
         }
 
-        synchronized(loader) {
-            if(loader.getClass().getCanonicalName().equalsIgnoreCase("io.papermc.paper.plugin.manager.DummyBukkitPluginLoader")) {
+        synchronized (loader) {
+            if (loader.getClass().getCanonicalName().equalsIgnoreCase("io.papermc.paper.plugin.manager.DummyBukkitPluginLoader")) {
                 Fuse.warn("Paper detected, unload of " + plugin.getName() + "'s loader may partially fail");
             }
 
             try {
                 List<?> loaders = Curse.on(loader).get("loaders");
 
-                for(Object i : new ArrayList<>(loaders)) {
+                for (Object i : new ArrayList<>(loaders)) {
                     JavaPlugin p = Curse.on(i).get("plugin");
-                    if(p != null) {
-                        if(p.getClass().equals(plugin.getClass())) {
-                            if(loaders.remove(i)) {
+                    if (p != null) {
+                        if (p.getClass().equals(plugin.getClass())) {
+                            if (loaders.remove(i)) {
                                 Fuse.info("Removed " + plugin.getName() + " from loaders");
                             } else {
                                 Fuse.warn("Couldn't remove " + plugin.getName() + " in loaders?");
@@ -251,8 +251,7 @@ public class Plugins {
                         }
                     }
                 }
-            } catch(Throwable e)
-            {
+            } catch (Throwable e) {
                 Fuse.error("Yup, looks like Paper is in use, and we can't unload " + plugin.getName() + "'s loader. This may cause issues with deleting the jar file or reloading it.");
             }
         }

@@ -23,24 +23,24 @@ public class FolderWatcher extends FileWatcher {
     }
 
     protected void readProperties() {
-        if(this.watchers == null) {
+        if (this.watchers == null) {
             this.watchers = new HashMap<>();
             this.changed = new ArrayList<>();
             this.created = new ArrayList<>();
             this.deleted = new ArrayList<>();
         }
 
-        if(this.file.isDirectory()) {
+        if (this.file.isDirectory()) {
             File[] var1 = this.file.listFiles();
 
-            for(File i : var1) {
-                if(!this.watchers.containsKey(i)) {
+            for (File i : var1) {
+                if (!this.watchers.containsKey(i)) {
                     this.watchers.put(i, new FolderWatcher(i));
                 }
             }
 
-            for(File i : new ArrayList<>(this.watchers.keySet())) {
-                if(!i.exists()) {
+            for (File i : new ArrayList<>(this.watchers.keySet())) {
+                if (!i.exists()) {
                     this.watchers.remove(i);
                 }
             }
@@ -54,7 +54,7 @@ public class FolderWatcher extends FileWatcher {
         this.changed.clear();
         this.created.clear();
         this.deleted.clear();
-        if(!this.file.isDirectory()) {
+        if (!this.file.isDirectory()) {
             return super.checkModified();
         } else {
             Map<File, FolderWatcher> w = new HashMap<>(this.watchers);
@@ -62,22 +62,22 @@ public class FolderWatcher extends FileWatcher {
             Iterator<File> var2 = w.keySet().iterator();
 
             File i;
-            while(var2.hasNext()) {
+            while (var2.hasNext()) {
                 i = var2.next();
-                if(!this.watchers.containsKey(i)) {
+                if (!this.watchers.containsKey(i)) {
                     this.deleted.add(i);
                 }
             }
 
             var2 = this.watchers.keySet().iterator();
 
-            while(var2.hasNext()) {
+            while (var2.hasNext()) {
                 i = var2.next();
-                if(!w.containsKey(i)) {
+                if (!w.containsKey(i)) {
                     this.created.add(i);
                 } else {
                     FolderWatcher fw = this.watchers.get(i);
-                    if(fw.checkModified()) {
+                    if (fw.checkModified()) {
                         this.changed.add(fw.file);
                     }
 
@@ -92,17 +92,17 @@ public class FolderWatcher extends FileWatcher {
     }
 
     public boolean checkModifiedFast() {
-        if(this.watchers != null && !this.watchers.isEmpty()) {
+        if (this.watchers != null && !this.watchers.isEmpty()) {
             this.changed.clear();
             this.created.clear();
             this.deleted.clear();
-            if(!this.file.isDirectory()) {
+            if (!this.file.isDirectory()) {
                 return super.checkModified();
             } else {
 
-                for(File i : this.watchers.keySet()) {
+                for (File i : this.watchers.keySet()) {
                     FolderWatcher fw = this.watchers.get(i);
-                    if(fw.checkModifiedFast()) {
+                    if (fw.checkModifiedFast()) {
                         this.changed.add(fw.file);
                     }
 

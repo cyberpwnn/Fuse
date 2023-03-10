@@ -14,7 +14,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,44 +27,41 @@ public abstract class InGameHudMixin {
 
     @Inject(method = "render", at = @At("RETURN"))
     public void onRender(MatrixStack matrices, float tickDelta, CallbackInfo info) {
-        for(Project i : Fuse.service.getWorkspace().getProjects()) {
-            if(i.isBuilding()) {
+        for (Project i : Fuse.service.getWorkspace().getProjects()) {
+            if (i.isBuilding()) {
                 building.add(i.getName());
             }
         }
         Map<String, String> k = Fuse.service.getDevServer().getDebugKeys();
 
-        if(!k.isEmpty()) {
+        if (!k.isEmpty()) {
             int w = MinecraftClient.getInstance().getWindow().getWidth();
             List<String> msgs = new ArrayList<>();
             int ll = 0;
             int h = MinecraftClient.getInstance().textRenderer.fontHeight;
 
-            for(String i : k.keySet())
-            {
+            for (String i : k.keySet()) {
                 msgs.add(i + ": " + k.get(i));
             }
 
-            for(String i : msgs) {
+            for (String i : msgs) {
                 ll = Math.max(ll, MinecraftClient.getInstance().textRenderer.getWidth(i));
             }
 
-            if(llbuf > ll) {
+            if (llbuf > ll) {
                 ll = llbuf;
-            }
-
-            else {
+            } else {
                 llbuf = ll;
             }
 
             llbuf--;
 
-            for(String i : msgs) {
+            for (String i : msgs) {
                 MinecraftClient.getInstance().textRenderer.draw(matrices, i, 5, 5 + (h * msgs.indexOf(i)), 0xAAAAAA);
             }
         }
 
-        if(building.isEmpty()) {
+        if (building.isEmpty()) {
             return;
         }
 

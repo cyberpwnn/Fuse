@@ -79,7 +79,7 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
 
     public void render(MatrixStack matrices, int mouseX, int mouseY, float delta) {
         List<Project> list = this.tryGet();
-        if(list != this.levels) {
+        if (list != this.levels) {
             this.show(list);
         }
 
@@ -87,7 +87,7 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
     }
 
     private void show(@Nullable List<Project> levels) {
-        if(levels == null) {
+        if (levels == null) {
             this.showLoadingScreen();
         } else {
             this.showSummaries(this.search, levels);
@@ -97,7 +97,7 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
     }
 
     public void setSearch(String search) {
-        if(this.levels != null && !search.equals(this.search)) {
+        if (this.levels != null && !search.equals(this.search)) {
             this.showSummaries(search, this.levels);
         }
 
@@ -108,8 +108,8 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
         this.clearEntries();
         search = search.toLowerCase(Locale.ROOT);
 
-        for(Project levelSummary : summaries) {
-            if(this.shouldShow(search, levelSummary)) {
+        for (Project levelSummary : summaries) {
+            if (this.shouldShow(search, levelSummary)) {
                 this.addEntry(new WorkspaceEntry(this, levelSummary));
             }
         }
@@ -159,7 +159,7 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
     public Optional<WorkspaceEntry> getSelectedAsOptional() {
         Fuse.log("Got it!?");
         Entry entry = this.getSelectedOrNull();
-        if(entry instanceof WorkspaceEntry workspaceEntry) {
+        if (entry instanceof WorkspaceEntry workspaceEntry) {
             return Optional.of(workspaceEntry);
         } else {
             return Optional.empty();
@@ -171,7 +171,7 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
     }
 
     public void appendNarrations(NarrationMessageBuilder builder) {
-        if(this.children().contains(this.loadingEntry)) {
+        if (this.children().contains(this.loadingEntry)) {
             this.loadingEntry.appendNarrations(builder);
         } else {
             super.appendNarrations(builder);
@@ -252,7 +252,7 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
         public void render(MatrixStack matrices, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
             String string = this.level.getName();
             String var10000 = this.level.getName();
-            if(StringUtils.isEmpty(string)) {
+            if (StringUtils.isEmpty(string)) {
                 var10000 = I18n.translate("selectWorld.world");
                 string = var10000 + " " + (index + 1);
             }
@@ -272,10 +272,10 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
         public boolean mouseClicked(double mouseX, double mouseY, int button) {
             WorkspaceListWidget.this.setSelected(this);
             this.screen.worldSelected(WorkspaceListWidget.this.getSelectedAsOptional().isPresent());
-            if(mouseX - (double) WorkspaceListWidget.this.getRowLeft() <= 32.0) {
+            if (mouseX - (double) WorkspaceListWidget.this.getRowLeft() <= 32.0) {
                 this.play();
                 return true;
-            } else if(Util.getMeasuringTimeMs() - this.time < 250L) {
+            } else if (Util.getMeasuringTimeMs() - this.time < 250L) {
                 this.play();
                 return true;
             } else {

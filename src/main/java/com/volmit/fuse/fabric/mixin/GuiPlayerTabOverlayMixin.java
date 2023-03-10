@@ -1,7 +1,6 @@
 package com.volmit.fuse.fabric.mixin;
 
 import com.volmit.fuse.fabric.Fuse;
-import javafx.scene.paint.Color;
 import net.minecraft.client.gui.DrawableHelper;
 import net.minecraft.client.gui.hud.PlayerListHud;
 import net.minecraft.client.util.math.MatrixStack;
@@ -16,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
 
-@Mixin( PlayerListHud.class)
+@Mixin(PlayerListHud.class)
 public abstract class GuiPlayerTabOverlayMixin {
     @Final
     @Shadow
@@ -31,19 +30,16 @@ public abstract class GuiPlayerTabOverlayMixin {
         int w = this.client.getWindow().getWidth();
         int h = this.client.getWindow().getHeight();
         float scale = 0.5f;
-        int ch = this.client.textRenderer.fontHeight+1;
+        int ch = this.client.textRenderer.fontHeight + 1;
         DrawableHelper.fill(matrixStack, 0, 0, w, h, 0x88000000);
         List<String> logs = Fuse.service.getDevServer().getLogs();
 
-        if(logs.isEmpty()) {
+        if (logs.isEmpty()) {
             this.client.textRenderer.drawWithShadow(matrixStack, "<no logs>", 2, 2, 0xAAAAAA);
-        }
-
-        else {
+        } else {
             int hh = 0;
             int maxLogs = (int) Math.floor(((h / ch) - 2) / scale) - 20;
-            for(int j = Math.max(0, logs.size() - maxLogs); j < logs.size(); j++)
-            {
+            for (int j = Math.max(0, logs.size() - maxLogs); j < logs.size(); j++) {
                 String log = logs.get(j);
                 matrixStack.scale(scale, scale, scale);
                 this.client.textRenderer.draw(matrixStack, log, 2, 2 + (hh * ch), 0xAAAAAA);

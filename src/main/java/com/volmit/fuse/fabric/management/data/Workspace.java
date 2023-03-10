@@ -13,11 +13,11 @@ public class Workspace {
     private List<Project> projects = new ArrayList<>();
 
     public void onTick() {
-        if(!GlfwUtils.isWindowFocused()) {
+        if (!GlfwUtils.isWindowFocused()) {
             return;
         }
 
         Fuse.service.getExecutor().getBurst().burst(projects.stream()
-            .map((e) -> (Runnable) e::onTick).collect(Collectors.toList()));
+                .map((e) -> (Runnable) e::onTick).collect(Collectors.toList()));
     }
 }

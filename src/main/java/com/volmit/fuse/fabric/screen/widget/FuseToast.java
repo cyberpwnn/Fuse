@@ -64,7 +64,7 @@ public class FuseToast implements Toast {
 
     public static void show(ToastManager manager, Type type, Text title, @Nullable Text description) {
         FuseToast fuseToast = manager.getToast(FuseToast.class, type);
-        if(fuseToast == null) {
+        if (fuseToast == null) {
             add(manager, type, title, description);
         } else {
             fuseToast.setContent(title, description);
@@ -93,7 +93,7 @@ public class FuseToast implements Toast {
     }
 
     public Toast.Visibility draw(MatrixStack matrices, ToastManager manager, long startTime) {
-        if(this.justUpdated) {
+        if (this.justUpdated) {
             this.startTime = startTime;
             this.justUpdated = false;
         }
@@ -102,26 +102,26 @@ public class FuseToast implements Toast {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         int i = this.getWidth();
         int j;
-        if(i == 160 && this.lines.size() <= 1) {
+        if (i == 160 && this.lines.size() <= 1) {
             manager.drawTexture(matrices, 0, 0, 0, 64, i, this.getHeight());
         } else {
             j = this.getHeight();
             int l = Math.min(4, j - 28);
             this.drawPart(matrices, manager, i, 0, 0, 28);
 
-            for(int m = 28; m < j - l; m += 10) {
+            for (int m = 28; m < j - l; m += 10) {
                 this.drawPart(matrices, manager, i, 16, m, Math.min(16, j - m - l));
             }
 
             this.drawPart(matrices, manager, i, 32 - l, j - l, l);
         }
 
-        if(this.lines == null) {
+        if (this.lines == null) {
             manager.getClient().textRenderer.draw(matrices, this.title, 18.0F, 12.0F, -256);
         } else {
             manager.getClient().textRenderer.draw(matrices, this.title, 18.0F, 7.0F, -256);
 
-            for(j = 0; j < this.lines.size(); ++j) {
+            for (j = 0; j < this.lines.size(); ++j) {
                 manager.getClient().textRenderer.draw(matrices, this.lines.get(j), 18.0F, (float) (18 + j * 12), -1);
             }
         }
@@ -134,7 +134,7 @@ public class FuseToast implements Toast {
         int j = Math.min(60, width - i);
         manager.drawTexture(matrices, 0, y, 0, 64 + textureV, i, height);
 
-        for(int k = i; k < width - j; k += 64) {
+        for (int k = i; k < width - j; k += 64) {
             manager.drawTexture(matrices, k, y, 32, 64 + textureV, Math.min(64, width - k - j), height);
         }
 

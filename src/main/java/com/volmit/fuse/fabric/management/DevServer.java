@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,16 +44,14 @@ public class DevServer extends Thread {
         looper.start();
     }
 
-    public Map<String, Long> getDebugTimes()
-    {
+    public Map<String, Long> getDebugTimes() {
         return lastDebug;
     }
 
-    public Map<String, String> getDebugKeys()
-    {
-        synchronized(debugKeys) {
-            for(String i : new ArrayList<>(debugKeys.keySet())) {
-                if(lastDebug.get(i) == null || System.currentTimeMillis() - lastDebug.get(i) > 10000) {
+    public Map<String, String> getDebugKeys() {
+        synchronized (debugKeys) {
+            for (String i : new ArrayList<>(debugKeys.keySet())) {
+                if (lastDebug.get(i) == null || System.currentTimeMillis() - lastDebug.get(i) > 10000) {
                     lastDebug.remove(i);
                     debugKeys.remove(i);
                 }
@@ -64,10 +61,8 @@ public class DevServer extends Thread {
         return debugKeys;
     }
 
-    public void putDebugKey(String k, String v)
-    {
-        synchronized(debugKeys)
-        {
+    public void putDebugKey(String k, String v) {
+        synchronized (debugKeys) {
             debugKeys.put(k, v);
             lastDebug.put(k, System.currentTimeMillis());
         }
@@ -92,39 +87,33 @@ public class DevServer extends Thread {
     }
 
     private void onServerLog(String line) {
-        if(line.contains("@debug ")) {
-            try
-            {
+        if (line.contains("@debug ")) {
+            try {
                 String[] s = line.split("\\Q@debug \\E");
                 String[] k = s[1].split("\\Q \\E");
                 putDebugKey(k[0], k[1]);
-            }
-
-            catch(Throwable e)
-            {
+            } catch (Throwable e) {
                 e.printStackTrace();
             }
-        }
-
-        else {
+        } else {
             logs.add(line);
         }
-        if(line.contains("Done") && line.contains("s)! For help, type \"help\"")) {
+        if (line.contains("Done") && line.contains("s)! For help, type \"help\"")) {
             onServerOnline();
         }
 
-        if(line.contains(player + " issued server command: /")) {
+        if (line.contains(player + " issued server command: /")) {
             onPlayerCommand(line.split("\\Q" + player + " issued server command: /\\E")[1]);
         }
 
-        if(line.endsWith("left the game")) {
+        if (line.endsWith("left the game")) {
             onPlayerLeft();
         }
 
-        if(line.endsWith("joined the game")) {
+        if (line.endsWith("joined the game")) {
             String player = "";
-            for(String i : line.split("\\Q \\E")) {
-                if(i.endsWith("joined")) {
+            for (String i : line.split("\\Q \\E")) {
+                if (i.endsWith("joined")) {
                     serverCommand("op " + player);
                     this.player = player;
                     onPlayerJoined(player);
@@ -152,14 +141,14 @@ public class DevServer extends Thread {
     public void onPlayerCommand(String command) {
         Fuse.log("Player Command: " + command);
 
-        if(command.equalsIgnoreCase("crash")) {
+        if (command.equalsIgnoreCase("crash")) {
             stopServer();
             closeClient = true;
         }
     }
 
     public void serverCommand(String command) {
-        if(outputWriter != null) {
+        if (outputWriter != null) {
             outputWriter.println(command);
             outputWriter.flush();
         }
@@ -171,11 +160,11 @@ public class DevServer extends Thread {
 
     public void stopServer() {
         serverCommand("stop");
-        if(process != null) {
+        if (process != null) {
             try {
                 process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
                 process.destroy();
-            } catch(InterruptedException e) {
+            } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -202,9 +191,9 @@ public class DevServer extends Thread {
         try {
             new File(Fuse.service.getServerFolder(), "STOPPER").mkdirs();
             Process p = new ProcessBuilder()
-                .command(args.toArray(new String[0]))
-                .directory(Fuse.service.getServerFolder())
-                .start();
+                    .command(args.toArray(new String[0]))
+                    .directory(Fuse.service.getServerFolder())
+                    .start();
             Runtime.getRuntime().addShutdownHook(new Thread(p::destroy));
             new ProcessRelogger(p.getInputStream(), false, serverLog).start();
             new ProcessRelogger(p.getErrorStream(), false, serverLog).start();
@@ -214,12 +203,12 @@ public class DevServer extends Thread {
             int code = p.waitFor();
             Fuse.log("Process Exited With Code " + code);
 
-            if(closeClient) {
+            if (closeClient) {
                 Fuse.service.close();
                 MinecraftClient.getInstance().stop();
             }
 
-        } catch(IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }

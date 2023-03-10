@@ -41,14 +41,14 @@ public class Project {
         modified |= main == null || main.isEmpty();
         modified |= checkWatchers();
 
-        if(modified) {
+        if (modified) {
             building = true;
             Fuse.onProjectBuildStarted(this);
             Fuse.service.getExecutor().queueThenWait(() -> {
                 try {
                     build();
                     Fuse.onProjectBuildSuccess(this);
-                } catch(Throwable e) {
+                } catch (Throwable e) {
                     Fuse.onProjectBuildFailed(this);
                     e.printStackTrace();
                 }
@@ -59,15 +59,15 @@ public class Project {
 
     private String getGradleDownloadUrl() {
         File gradleWrapperConfig = new File(location, "gradle/wrapper/gradle-wrapper.properties");
-        if(gradleWrapperConfig.exists()) {
+        if (gradleWrapperConfig.exists()) {
             try {
                 String[] lines = Files.readAllLines(gradleWrapperConfig.toPath()).toArray(new String[0]);
-                for(String i : lines) {
-                    if(i.startsWith("distributionUrl=")) {
+                for (String i : lines) {
+                    if (i.startsWith("distributionUrl=")) {
                         return i.split("=")[1].replaceAll("\\Q\\\\E", "");
                     }
                 }
-            } catch(Throwable e) {
+            } catch (Throwable e) {
                 e.printStackTrace();
             }
         }
@@ -75,15 +75,15 @@ public class Project {
         Fuse.err("Missing gradle file. Checking parent directory for gradle-wrapper.properties");
 
         gradleWrapperConfig = new File(new File(location).getParentFile(), "gradle/wrapper/gradle-wrapper.properties");
-        if(gradleWrapperConfig.exists()) {
+        if (gradleWrapperConfig.exists()) {
             try {
                 String[] lines = Files.readAllLines(gradleWrapperConfig.toPath()).toArray(new String[0]);
-                for(String i : lines) {
-                    if(i.startsWith("distributionUrl=")) {
+                for (String i : lines) {
+                    if (i.startsWith("distributionUrl=")) {
                         return i.split("=")[1].replaceAll("\\Q\\\\E", "");
                     }
                 }
-            } catch(Throwable e) {
+            } catch (Throwable e) {
                 e.printStackTrace();
             }
         }
@@ -97,7 +97,7 @@ public class Project {
     private String getGradleVersion(String url) {
         String[] seg = url.split("\\Q/\\E");
         String n = seg[seg.length - 1].replaceAll("\\Q-bin.zip\\E", "")
-            .replaceAll("\\Qgradle-\\E", "");
+                .replaceAll("\\Qgradle-\\E", "");
         return n;
     }
 
@@ -111,7 +111,7 @@ public class Project {
         File dll = new File(folder.getParentFile(), "downloads/gradle-" + getGradleVersion(url) + ".zip");
         dll.getParentFile().mkdirs();
 
-        if(!folder.exists()) {
+        if (!folder.exists()) {
             folder.mkdirs();
             Fuse.service.download(url, dll);
             Fuse.log("Installing Gradle " + getGradleVersion(url) + " to " + folder.getAbsolutePath());
@@ -123,15 +123,15 @@ public class Project {
         Fuse.log("Building " + new File(location).getName());
         installGradle();
         GradleExecutor.builder()
-            .project(new File(location))
-            .gradle(getGradleInstallationFolder(getGradleDownloadUrl()))
-            .arg("remapJar")
-            .arg("shadowJar")
-            .build().execute();
+                .project(new File(location))
+                .gradle(getGradleInstallationFolder(getGradleDownloadUrl()))
+                .arg("remapJar")
+                .arg("shadowJar")
+                .build().execute();
         File file = findBestOutput(true);
         Fuse.log("SelfBuild complete");
 
-        if(file != null) {
+        if (file != null) {
             Fuse.service.getDevServer().installFuse(file);
         } else {
             Fuse.log("No output found");
@@ -141,20 +141,20 @@ public class Project {
     private void build() throws IOException {
         Fuse.log("Building " + new File(location).getName());
         boolean hasShadow = Files.readAllLines(new File(location, "build.gradle").toPath()).stream()
-            .anyMatch(i -> i.contains("com.github.johnrengelman.shadow"));
+                .anyMatch(i -> i.contains("com.github.johnrengelman.shadow"));
         installGradle();
 
-        if(hasShadow) {
+        if (hasShadow) {
             Fuse.log("Shadow detected, building shadow jar");
         }
 
         GradleExecutor e = GradleExecutor.builder()
-            .project(new File(location))
-            .gradle(getGradleInstallationFolder(getGradleDownloadUrl()))
-            .arg(hasShadow ? "shadowJar" : "build")
-            .build().execute();
+                .project(new File(location))
+                .gradle(getGradleInstallationFolder(getGradleDownloadUrl()))
+                .arg(hasShadow ? "shadowJar" : "build")
+                .build().execute();
 
-        if(e.code != 0) {
+        if (e.code != 0) {
             Fuse.log("Gradle build failed with code " + e.code);
             throw new RuntimeException("Gradle build failed with code " + e.code);
         }
@@ -162,7 +162,7 @@ public class Project {
         File file = findBestOutput(hasShadow);
         Fuse.log("Build complete");
 
-        if(file != null) {
+        if (file != null) {
             Fuse.log("Updating Properties for " + new File(location).getName());
             updatePropertiesFromJar(file);
             Fuse.log("Installing " + name);
@@ -178,10 +178,10 @@ public class Project {
         name = yml.getString("name");
         main = yml.getString("main");
 
-        if(yml.contains("depend")) {
+        if (yml.contains("depend")) {
             depend = yml.getStringList("depend");
         }
-        if(yml.contains("softdepend")) {
+        if (yml.contains("softdepend")) {
             softDepend = yml.getStringList("softdepend");
         }
 
@@ -191,13 +191,13 @@ public class Project {
     private File findBestOutput(boolean shadow) {
         File buildLibs = new File(location, "build/libs");
         List<File> found = new ArrayList<>();
-        for(File i : buildLibs.listFiles()) {
-            if(i.getName().endsWith(shadow ? "-all.jar" : ".jar")) {
+        for (File i : buildLibs.listFiles()) {
+            if (i.getName().endsWith(shadow ? "-all.jar" : ".jar")) {
                 found.add(i);
             }
         }
 
-        if(found.isEmpty()) {
+        if (found.isEmpty()) {
             return null;
         }
 
@@ -207,7 +207,7 @@ public class Project {
 
     private boolean checkWatchers() {
         boolean modified = false;
-        for(FolderWatcher i : _watchers.values()) {
+        for (FolderWatcher i : _watchers.values()) {
             modified |= i.checkModifiedFast();
         }
 
@@ -218,27 +218,27 @@ public class Project {
         List<String> removals = new ArrayList<>();
         List<String> adds = new ArrayList<>();
 
-        if(_watchers == null) {
+        if (_watchers == null) {
             _watchers = new HashMap<>();
         }
 
-        for(String i : _watchers.keySet()) {
-            if(!watchList.contains(i)) {
+        for (String i : _watchers.keySet()) {
+            if (!watchList.contains(i)) {
                 removals.add(i);
             }
         }
 
-        for(String i : watchList) {
-            if(!_watchers.containsKey(i)) {
+        for (String i : watchList) {
+            if (!_watchers.containsKey(i)) {
                 adds.add(i);
             }
         }
 
-        for(String i : removals) {
+        for (String i : removals) {
             _watchers.remove(i);
         }
 
-        for(String i : adds) {
+        for (String i : adds) {
             _watchers.put(i, new FolderWatcher(new File(i)));
         }
 

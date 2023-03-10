@@ -21,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,10 +32,10 @@ public class Fuse implements ModInitializer {
     public static final Identifier BUILD_STARTED_ID = new Identifier("fuse:build_started");
     public static final Identifier ONLINE_ID = new Identifier("fuse:online");
     private static final KeyBinding keyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-        "Workspace Manager",
-        InputUtil.Type.KEYSYM,
-        GLFW.GLFW_KEY_SEMICOLON,
-        "Fuse"
+            "Workspace Manager",
+            InputUtil.Type.KEYSYM,
+            GLFW.GLFW_KEY_SEMICOLON,
+            "Fuse"
     ));
     public static long ll = -1;
     public static String lastLog = "";
@@ -57,17 +56,15 @@ public class Fuse implements ModInitializer {
     public static void toast(FuseToast.Type type, String title, String desc) {
         try {
             MinecraftClient.getInstance().getToastManager().add(
-                new FuseToast(type, Text.of(title), Text.of(desc)));
+                    new FuseToast(type, Text.of(title), Text.of(desc)));
 
-            if(!retoast.isEmpty()) {
+            if (!retoast.isEmpty()) {
                 retoast.forEach(Runnable::run);
                 retoast.clear();
             }
-        }
-
-        catch(Throwable e) {
+        } catch (Throwable e) {
             retoast.add(() -> MinecraftClient.getInstance().getToastManager().add(
-                new FuseToast(type, Text.of(title), Text.of(desc))));
+                    new FuseToast(type, Text.of(title), Text.of(desc))));
         }
     }
 
@@ -93,7 +90,7 @@ public class Fuse implements ModInitializer {
 
     public static void log(String msg) {
         ll = System.currentTimeMillis();
-        if(msg.equals("... done")) {
+        if (msg.equals("... done")) {
             return;
         }
 
@@ -103,7 +100,7 @@ public class Fuse implements ModInitializer {
 
     public static void err(String msg) {
         ll = System.currentTimeMillis();
-        if(msg.equals("... done")) {
+        if (msg.equals("... done")) {
             return;
         }
 
@@ -112,7 +109,7 @@ public class Fuse implements ModInitializer {
     }
 
     public static void start() {
-        if(service == null) {
+        if (service == null) {
             service = new FuseService(new File("fuse"));
             LOG.info("Starting Fuse Backend Service");
             service.open();
@@ -127,7 +124,7 @@ public class Fuse implements ModInitializer {
         Registry.register(Registries.SOUND_EVENT, ONLINE_ID, ONLINE_SOUND);
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if(keyBinding.wasPressed()) {
+            if (keyBinding.wasPressed()) {
                 client.setScreen(new WorkspaceScreen(client.currentScreen));
             }
         });
