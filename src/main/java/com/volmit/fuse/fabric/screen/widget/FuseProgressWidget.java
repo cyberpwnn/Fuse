@@ -22,12 +22,12 @@ public class FuseProgressWidget extends DrawableHelper implements Drawable, Elem
     }
 
     public double getProgress() {
-        return Fuse.service.getExecutor().getProgress();
+        return Math.max(0, Math.min(Fuse.service.getExecutor().getProgress(), 1));
     }
 
     @Override
     public void render(MatrixStack matrices, int mouseX, int mouseY, float delta) {
-        if (getProgress() >= 1 || getProgress() <= 0) {
+        if (Fuse.service.getExecutor().getQueued() <= 0) {
             return;
         }
 

@@ -23,6 +23,10 @@ public class Project {
     private List<String> softDepend;
     private List<String> depend;
     private String main;
+    private List<String> onLoad;
+    private List<String> onUnload;
+    private int buildCode;
+    private int lastBuildCode;
     private transient boolean building;
     private transient Map<String, FolderWatcher> _watchers;
 
@@ -33,6 +37,8 @@ public class Project {
         watchList.add(new File(location, "gradle.properties").getAbsolutePath());
         watchList.add(new File(location, "settings.gradle").getAbsolutePath());
         watchList.add(new File(location, "build.gradle").getAbsolutePath());
+        buildCode = 0;
+        lastBuildCode = 0;
     }
 
     public void onTick() {
@@ -40,6 +46,8 @@ public class Project {
         modified |= name == null || name.isEmpty();
         modified |= main == null || main.isEmpty();
         modified |= checkWatchers();
+        modified |= lastBuildCode != buildCode;
+        lastBuildCode = buildCode;
 
         if (modified) {
             building = true;
@@ -165,10 +173,10 @@ public class Project {
         if (file != null) {
             Fuse.log("Updating Properties for " + new File(location).getName());
             updatePropertiesFromJar(file);
-            Fuse.log("Installing " + name);
-            Fuse.service.getDevServer().installPlugin(this, file);
+            Fuse.log("Installing " + name + " (" + file.getAbsolutePath() + ")");
+            Fuse.service.getDevServer().installPlugin(this, file, this);
         } else {
-            Fuse.log("No output found");
+            Fuse.log("No output found at " + file.getAbsolutePath());
         }
     }
 
@@ -243,5 +251,9 @@ public class Project {
         }
 
         return !removals.isEmpty() || !adds.isEmpty();
+    }
+
+    public void rebuild() {
+        buildCode++;
     }
 }

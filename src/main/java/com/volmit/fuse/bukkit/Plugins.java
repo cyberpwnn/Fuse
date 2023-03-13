@@ -11,15 +11,20 @@ import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
 import org.bukkit.plugin.SimplePluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.plugin.java.JavaPluginLoader;
+import org.yaml.snakeyaml.error.YAMLException;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 public class Plugins {
     public static File getPluginFile(Plugin plugin) {
@@ -39,8 +44,52 @@ public class Plugins {
     public static PluginDescriptionFile getPluginDescription(File file) {
         try {
             return Fuse.instance.getPluginLoader().getPluginDescription(file);
-        } catch (InvalidDescriptionException e) {
-            throw new RuntimeException(e);
+        } catch (Throwable e) {
+            e.printStackTrace();
+            Fuse.warn("Failed to get plugin description for " + file.getName() + " (" + file.getAbsolutePath() + ")");
+            Fuse.warn("Assuming its because it's a dummy plugin loader. Attempting to read the jar for a yaml directly.");
+            try {
+                return readPluginDescriptionDirectly(file);
+            }
+
+            catch(Throwable ex) {
+                Fuse.error("Failed to load plugin description for " + file.getName() + " (" + file.getAbsolutePath() + ")");
+                return null;
+            }
+        }
+    }
+
+    public static PluginDescriptionFile readPluginDescriptionDirectly(File jarFile) throws InvalidDescriptionException {
+        JarFile jar = null;
+        InputStream stream = null;
+
+        try {
+            jar = new JarFile(jarFile);
+            JarEntry entry = jar.getJarEntry("plugin.yml");
+
+            if (entry == null) {
+                throw new InvalidDescriptionException(new FileNotFoundException("Jar does not contain plugin.yml"));
+            }
+
+            stream = jar.getInputStream(entry);
+
+            return new PluginDescriptionFile(stream);
+
+        } catch (IOException | YAMLException ex) {
+            throw new InvalidDescriptionException(ex);
+        } finally {
+            if (jar != null) {
+                try {
+                    jar.close();
+                } catch (IOException e) {
+                }
+            }
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (IOException e) {
+                }
+            }
         }
     }
 
@@ -89,13 +138,7 @@ public class Plugins {
 
         for (File i : new File("plugins").listFiles()) {
             try {
-                PluginDescriptionFile pdf = pdfs.computeIfAbsent(i, (k) -> {
-                    try {
-                        return Fuse.instance.getPluginLoader().getPluginDescription(k);
-                    } catch (InvalidDescriptionException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+                PluginDescriptionFile pdf = pdfs.computeIfAbsent(i, Plugins::getPluginDescription);
 
                 if (pdf.getName().toLowerCase().startsWith(query.toLowerCase())) {
                     return i;
@@ -107,13 +150,7 @@ public class Plugins {
 
         for (File i : new File("plugins").listFiles()) {
             try {
-                PluginDescriptionFile pdf = pdfs.computeIfAbsent(i, (k) -> {
-                    try {
-                        return Fuse.instance.getPluginLoader().getPluginDescription(k);
-                    } catch (InvalidDescriptionException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+                PluginDescriptionFile pdf = pdfs.computeIfAbsent(i, Plugins::getPluginDescription);
 
                 if (pdf.getName().toLowerCase().contains(query.toLowerCase())) {
                     return i;

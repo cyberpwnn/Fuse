@@ -49,10 +49,12 @@ public class Fuse extends JavaPlugin {
             lastAlive = System.currentTimeMillis();
             if (args.length == 1 && args[0].equals("inject")) {
                 File dir = new File("plugins/fuse");
+                info("Looking in " + dir.getAbsolutePath() + " for jars to inject");
                 if (dir.exists()) {
                     for (File i : dir.listFiles()) {
                         if (i.getName().endsWith(".jar")) {
                             try {
+                                info("Injecting " + i.getName());
                                 hotload(i);
                                 i.delete();
                             } catch (Throwable e) {
@@ -139,16 +141,16 @@ public class Fuse extends JavaPlugin {
 
                     return true;
                 } else {
-                    sender.sendMessage("/proxy unload <plugin>");
-                    sender.sendMessage("/proxy load <plugin>");
-                    sender.sendMessage("/proxy reload <plugin>");
-                    sender.sendMessage("/proxy delete <plugin>");
+                    sender.sendMessage("/fuse unload <plugin>");
+                    sender.sendMessage("/fuse load <plugin>");
+                    sender.sendMessage("/fuse reload <plugin>");
+                    sender.sendMessage("/fuse delete <plugin>");
                 }
             } else {
-                sender.sendMessage("/proxy unload <plugin>");
-                sender.sendMessage("/proxy load <plugin>");
-                sender.sendMessage("/proxy reload <plugin>");
-                sender.sendMessage("/proxy delete <plugin>");
+                sender.sendMessage("/fuse unload <plugin>");
+                sender.sendMessage("/fuse load <plugin>");
+                sender.sendMessage("/fuse reload <plugin>");
+                sender.sendMessage("/fuse delete <plugin>");
             }
         }
 
@@ -160,15 +162,35 @@ public class Fuse extends JavaPlugin {
         File file = Plugins.getPluginFile(pds.getName());
 
         if (file != null) {
+            info("Found existing plugin file for " + pds.getName() + " at " + file.getAbsolutePath() + " cleaning up...");
             Plugin p = Plugins.getLoadedPluginFromFile(file);
+
             if (p != null) {
+                info("Unloading " + p.getName());
                 Plugins.delete(p);
+                info("Deleting " + pds.getName());
+            }
+
+            if(file.exists()) {
+                info("Deleting " + file.getAbsolutePath() + " (still existed)");
+                if(file.delete())
+                {
+                    info("Deleted " + file.getAbsolutePath());
+                } else {
+                    info("Failed to delete " + file.getAbsolutePath());
+                }
             }
         }
+        else {
+            info("No existing plugin file for " + pds.getName());
+        }
 
-        file = new File("plugins/" + plugin.getName() + ".jar");
+        file = new File("plugins/" + pds.getName() + ".jar");
+        info("Copying " + plugin.getAbsolutePath() + " to " + file.getAbsolutePath());
         FileUtils.copyFile(plugin, file);
+        info("Loading " + pds.getName());
         Plugin p = Plugins.load(file);
+        info("Loaded " + p.getName());
     }
 
     public static void msg(String string) {

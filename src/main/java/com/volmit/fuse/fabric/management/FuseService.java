@@ -102,6 +102,11 @@ public class FuseService {
     }
 
     private void onTick() {
+        if(!ready)
+        {
+            return;
+        }
+
         workspace.onTick();
 
         if (lastWorkspaceSave.equals(new Gson().toJson(workspace))) {

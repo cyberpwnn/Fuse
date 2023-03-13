@@ -73,11 +73,28 @@ public class DevServer extends Thread {
         Fuse.log("Installed Fuse to Server");
     }
 
-    public void installPlugin(Project project, File file) throws IOException {
+    public void installPlugin(Project project, File file, Project p) throws IOException {
+        if(p.getOnUnload() != null) {
+            for(String i : p.getOnUnload()) {
+                serverCommand(i);
+            }
+        }
+
         new File(Fuse.service.getServerFolder(), "plugins/fuse").mkdirs();
+        Fuse.log("Installing Plugin " + project.getName() + " to Server");
+        Fuse.log("Copying " + file.getAbsolutePath() + " to " + new File(Fuse.service.getServerFolder(), "plugins/fuse/" + project.getName() + ".jar").getAbsolutePath());
         FileUtils.copyFile(file, new File(Fuse.service.getServerFolder(), "plugins/fuse/" + project.getName() + ".jar"));
         Fuse.log("Installed Plugin " + project.getName() + " to Server");
         serverCommand("fuse inject");
+        if(p.getOnLoad() != null) {
+            Fuse.service.getExecutor().queue(() -> {
+                if(p.getOnLoad() != null) {
+                    for(String i : p.getOnLoad()) {
+                        serverCommand(i);
+                    }
+                }
+            });
+        }
     }
 
     private void onServerOnline() {
@@ -98,6 +115,7 @@ public class DevServer extends Thread {
         } else {
             logs.add(line);
         }
+
         if (line.contains("Done") && line.contains("s)! For help, type \"help\"")) {
             onServerOnline();
         }
@@ -122,6 +140,8 @@ public class DevServer extends Thread {
 
                 player = i;
             }
+
+
         }
     }
 
@@ -135,7 +155,16 @@ public class DevServer extends Thread {
 
     private void onPlayerJoined(String player) {
         messagePlayer("Fuse Management is Online! Happy Hacking!");
-        messagePlayer("Configure your workspace with [CTRL + W]");
+        messagePlayer("Configure your workspace with [SEMICOLON]");
+        if(Fuse.service.getWorkspace().getOnJoin() != null) {
+            Fuse.service.getExecutor().queue(() -> {
+                if(Fuse.service.getWorkspace().getOnJoin() != null) {
+                    for(String i : Fuse.service.getWorkspace().getOnJoin()) {
+                        serverCommand(i.replaceAll("\\Q{player}\\E", player));
+                    }
+                }
+            });
+        }
     }
 
     public void onPlayerCommand(String command) {

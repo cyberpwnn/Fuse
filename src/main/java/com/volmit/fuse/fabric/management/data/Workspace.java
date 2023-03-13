@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 @Data
 public class Workspace {
     private List<Project> projects = new ArrayList<>();
+    private List<String> onJoin = new ArrayList<>();
 
     public void onTick() {
         if (!GlfwUtils.isWindowFocused()) {

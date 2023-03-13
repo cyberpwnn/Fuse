@@ -68,6 +68,8 @@ public class WorkspaceScreen extends Screen {
                 Project project = new Project(directory.getAbsolutePath());
                 Fuse.service.getWorkspace().getProjects().add(project);
                 Fuse.log("Added project " + project.getName());
+                close();
+                client.setScreen(new WorkspaceScreen(parent));
             });
         }).dimensions(this.width / 2 + 4, this.height - 52, 150, 20).build());
         this.editButton = this.addDrawableChild(ButtonWidget.builder(Text.of("Edit"), (button) -> {

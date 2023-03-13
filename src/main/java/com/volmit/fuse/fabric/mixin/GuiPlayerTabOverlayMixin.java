@@ -38,7 +38,7 @@ public abstract class GuiPlayerTabOverlayMixin {
             this.client.textRenderer.drawWithShadow(matrixStack, "<no logs>", 2, 2, 0xAAAAAA);
         } else {
             int hh = 0;
-            int maxLogs = (int) Math.floor(((h / ch) - 2)) - 3;
+            int maxLogs = (int) Math.floor(((((float)h/scale) / ((float)ch)) - 2)) - 3;
             for(int j = Math.max(0, logs.size() - maxLogs); j < logs.size(); j++)
             {
                 String log = logs.get(j);
