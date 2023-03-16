@@ -286,6 +286,7 @@ public class FuseService {
     private void installJDK() {
         executor.queue(() -> {
             Fuse.log("Installing JDK");
+            jdkLocation.mkdirs();
             downloadJDK();
         });
     }
