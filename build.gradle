@@ -45,8 +45,8 @@ dependencies {
 	implementation 'org.apache.commons:commons-compress:1.22'
 	implementation 'art.arcane:Chrono:22.9.10'
 	implementation 'art.arcane:Curse:22.11.8'
-	implementation 'me.carleslc.Simple-YAML:Simple-Yaml:1.8.3'
-	implementation 'org.spigotmc:spigot-api:1.19.3-R0.1-SNAPSHOT'
+	implementation 'me.carleslc.Simple-YAML:Simple-Yaml:1.8.4'
+	implementation 'org.spigotmc:spigot-api:1.19.4-R0.1-SNAPSHOT'
 }
 
 remapJar.dependsOn shadowJar

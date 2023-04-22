@@ -37,4 +37,14 @@ public class FuseProgressWidget extends DrawableHelper implements Drawable, Elem
         drawTextWithShadow(matrices, MinecraftClient.getInstance().textRenderer, Text.of(Fuse.lastLog), x + 4, y + 4, 0xffffffff);
         matrices.scale(1f / 0.75f, 1f / 0.75f, 1f / 0.75f);
     }
+
+    @Override
+    public void setFocused(boolean bl) {
+
+    }
+
+    @Override
+    public boolean isFocused() {
+        return false;
+    }
 }

@@ -143,7 +143,7 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
         return super.getRowWidth() + 50;
     }
 
-    protected boolean isFocused() {
+    public boolean isFocused() {
         return this.parent.getFocused() == this;
     }
 
@@ -152,9 +152,9 @@ public class WorkspaceListWidget extends AlwaysSelectedEntryListWidget<Workspace
         this.parent.workspaceSelected(entry != null && entry.isAvailable());
     }
 
-    protected void moveSelection(EntryListWidget.MoveDirection direction) {
-        this.moveSelectionIf(direction, Entry::isAvailable);
-    }
+//    protected void moveSelection(EntryListWidget.MoveDirection direction) {
+//        this.moveSelectionIf(direction, Entry::isAvailable);
+//    }
 
     public Optional<WorkspaceEntry> getSelectedAsOptional() {
         Fuse.log("Got it!?");
